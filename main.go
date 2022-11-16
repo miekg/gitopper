@@ -1,11 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"os"
 
 	"github.com/miekg/gitopper/gitcmd"
+	"github.com/miekg/gitopper/log"
 	toml "github.com/pelletier/go-toml/v2"
 )
 
@@ -21,9 +20,9 @@ func main() {
 	}
 
 	// config check - abstract so we can do it seperately
-	for i, m := range cfg.Machines {
+	for _, m := range cfg.Machines {
 		m1 := merge(cfg.Global, m)
-		fmt.Printf("%d %+v\n", i, m1)
+		log.Infof("Machine %q", m1.Name)
 
 		dirs := []string{}
 		for _, d := range m1.Dirs {
@@ -35,8 +34,10 @@ func main() {
 		// Initial checkout
 		err := gc.Checkout()
 		if err != nil {
-			log.Printf("Error checking out: %s", err)
+			log.Warningf("Machine %q, error checking out: %s", m1.Name, err)
 		}
+		hash, _ := gc.Hash()
+		log.Infof("Machine %q, repository in %q with %q", m1.Name, m1.Mount, hash)
 	}
 
 	// Keep up to date

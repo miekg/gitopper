@@ -29,17 +29,16 @@ func New(url, mount string, dirs []string) *Git {
 	return g
 }
 
-func (g *Git) run(args ...string) error {
-	log.Infof("running %v", args)
+func (g *Git) run(args ...string) ([]byte, error) {
 	ctx := context.TODO()
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = g.cwd
-	log.Debugf("DIR", cmd.Dir)
+	log.Infof("running in %q with %v", cmd.Dir, args)
 
 	out, err := cmd.CombinedOutput()
 	log.Debug(string(out))
 
-	return err
+	return out, err
 }
 
 // IsCheckedOut will check g.mount and if it has an .git sub directory we assume the checkout has been done.
@@ -59,17 +58,21 @@ func (g *Git) Checkout() error {
 	}
 
 	g.cwd = ""
-	err := g.run("clone", "--filter=blob:none", "--no-checkout", "--sparse", g.url, g.mount)
+	_, err := g.run("clone", "--filter=blob:none", "--no-checkout", "--sparse", g.url, g.mount)
 	if err != nil {
 		return err
 	}
+
 	g.cwd = g.mount
 	defer func() { g.cwd = "" }()
-
-	args := []string{"sparse-checkout", "add"}
+	args := []string{"sparse-checkout", "set"}
 	args = append(args, g.dirs...)
-	err = g.run(args...)
+	_, err = g.run(args...)
+	if err != nil {
+		return err
+	}
 
+	_, err = g.run("checkout")
 	return err
 }
 
@@ -78,8 +81,7 @@ func (g *Git) Pull() error {
 	g.cwd = g.mount
 	defer func() { g.cwd = "" }()
 
-	err := g.run("pull")
-
+	_, err := g.run("pull")
 	return err
 }
 
@@ -90,7 +92,7 @@ func (g *Git) Diff() (bool, error) {
 
 	args := []string{"diff", "HEAD", "HEAD^", "--"}
 	args = append(args, g.dirs...) // can we check multiple dirs?
-	err := g.run(args...)
+	_, err := g.run(args...)
 	if err != nil {
 		return false, err
 	}
@@ -99,4 +101,22 @@ func (g *Git) Diff() (bool, error) {
 	}
 
 	return false, nil
+}
+
+// Hash returns the git hash of HEAD in the repo in g.mount
+func (g *Git) Hash() (string, error) {
+	g.cwd = g.mount
+	defer func() { g.cwd = "" }()
+
+	out, err := g.run("rev-parse", "HEAD")
+	if err != nil {
+		return "", err
+	}
+
+	hash := string(out)
+	if len(hash) >= 41 {
+		hash = hash[:40]
+	}
+
+	return hash, nil
 }

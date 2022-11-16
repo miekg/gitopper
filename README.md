@@ -20,6 +20,10 @@ git df HEAD^ HEAD -- grafana
 fatal: bad revision 'HEAD^'
 ~~~
 
+## wipe a repo
+
+We may want to wipe a repo and let the automation reclone in an emergency.
+
 ### config
 
 ~~~

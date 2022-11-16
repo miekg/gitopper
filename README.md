@@ -12,7 +12,7 @@ gitopper_machine_info{machine="..."} 1.0
 gitopper_service_hash{service="...", hash="..."} 1.0
 gitopper_service_frozen{service="..."} 1.0
 gitopper_service_ok{service="..."} 1.0
-gitopper_service_ping_failure_count{} 1.0
+gitopper_service_failure_count{} 1.0
 ~~~
 
 ## Features
@@ -45,10 +45,6 @@ We may want to wipe a repo and let the automation reclone in an emergency.
 Do we need plugins for this things? Maybe other type of remotes, like mercurial or something?
 
 ## Remote Interface
-
-first metrics, then remote interface
-
-Rest like???
 
 - list all machines - from the config file?
 - list all services from a machine - should be from the config as well...

@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path"
 
 	"github.com/miekg/gitopper/gitcmd"
 	"github.com/miekg/gitopper/log"
@@ -29,7 +30,8 @@ func main() {
 			dirs = append(dirs, d.Link)
 		}
 
-		gc := gitcmd.New(m1.URL, m1.Mount, dirs)
+		repo := path.Join(m1.Mount, m1.Service)
+		gc := gitcmd.New(m1.URL, repo, dirs)
 
 		// Initial checkout
 		err := gc.Checkout()
@@ -37,7 +39,7 @@ func main() {
 			log.Warningf("Machine %q, error checking out: %s", m1.Name, err)
 		}
 		hash, _ := gc.Hash()
-		log.Infof("Machine %q, repository in %q with %q", m1.Name, m1.Mount, hash)
+		log.Infof("Machine %q, repository in %q with %q", m1.Name, repo, hash)
 	}
 
 	// Keep up to date

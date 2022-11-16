@@ -20,6 +20,7 @@ func main() {
 		log.Fatal(err)
 	}
 	// config check - abstract so we can do it seperately
+	// start webservies
 
 	for _, s := range cfg.Services {
 		s1 := s.merge(cfg.Global)

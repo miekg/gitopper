@@ -5,3 +5,5 @@ type Config struct {
 	Global   Service
 	Services []Service
 }
+
+// do small config check

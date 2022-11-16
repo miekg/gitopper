@@ -24,7 +24,8 @@ type Service struct {
 	Dirs     []Dir  // How to map our local directories to the git repository.
 
 	State
-	m *sync.RWMutex // protects state
+	m         *sync.RWMutex // protects State
+	freezeDur time.Duration // how long to freeze for, time.Zero is until unfreeze
 }
 
 type Dir struct {

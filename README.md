@@ -3,13 +3,17 @@ is actually a sane way of doing thing.
 
 The mind says 'yes', reality says '...' ?
 
-
-
 ## Notes
 
 ## metrics
 
-gitopper_service_hash{hash="...", service="...", machine="...."} 1
+~~~ txt
+gitopper_machine_info{machine="..."} 1.0
+gitopper_service_hash{service="...", hash="..."} 1.0
+gitopper_service_frozen{service="..."} 1.0
+gitopper_service_ok{service="..."} 1.0
+gitopper_service_ping_failure_count{} 1.0
+~~~
 
 ## Features
 
@@ -34,41 +38,7 @@ fatal: bad revision 'HEAD^'
 
 We may want to wipe a repo and let the automation reclone in an emergency.
 
-bind mounts are added on top of each other
-
 ### config
-
-~~~
-grafana.atoom.net {
-        package grafana
-        action reload grafana-server
-        repo {
-            url git@gitlab.com/sys/data
-            mountpoint /mnt/grafana
-        }
-        # define the directories for the sparse checkout and how to bind mount them
-        /etc/grafana -> grafana/etc
-        /var/lib/grafana/dashboards -> grafana/dashboards
-}
-~~~
-
-~~~ txt
-{
-    # global options
-    url git@github.com/miekg/blah-origin
-}
-
-grafana.atoom.net {
-        package grafana
-        action reload grafana-server
-        mountpoint /mnt/grafana
-        directories grafana
-
-        # define the directories for the sparse checkout and how to bind mount them
-        /etc/grafana -> grafana/etc
-        /var/lib/grafana/dashboards -> grafana/dashboards
-}
-~~~
 
 ## Code
 
@@ -102,5 +72,6 @@ gitopper-ctl status <service-name> @machine  git, pull, last update??
 gitopper-ctl freeze <service-name> [<duration>] @machine
 gitopper-ctl unfreeze <service-name> @machine
 gitopper-ctl rollback <service-name> <hash> @machine
+gitopper-ctl redo <service-name> @machine    # delete repo, and refetch - impact on service?
 
 TEXT OUTPUT? So not really, or json? Never know if you have everything???

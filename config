@@ -3,8 +3,9 @@ url = "https://github.com/miekg/blah-origin"
 
 [[machines]]
 name = "grafana.atoom.net"
+service = "grafana-server"
 package = "grafana"
-action = "reload grafana-server"
+action = "reload"
 mount = "/tmp/grafana1"
 dirs = [
     { local = "/etc/grafana", link = "grafana/etc", single = false },

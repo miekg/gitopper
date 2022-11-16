@@ -2,7 +2,8 @@ package main
 
 // Machine contains the configuration for a specific machine.
 type Machine struct {
-	Name    string // Unique identfier for this machine.
+	Name    string // Identifier for this machine - may be shared with multiple machines.
+	Service string // Identifier for the service - will be used for action.
 	Package string // The package that might need installing.
 	Action  string `toml:"omitempty"` // The systemd action to take when files have changed.
 	URL     string // The URL of the (remote) Git repository.

@@ -5,6 +5,14 @@ The mind says 'yes', reality says '...' ?
 
 ## Notes
 
+## metrics
+
+gitopper_service_hash{hash="...", service="...", machine="...."} 1
+
+## Features
+
+Noop feature
+
 ## depth
 
 -depth 1 is useless;
@@ -61,3 +69,10 @@ grafana.atoom.net {
 ## Code
 
 Do we need plugins for this things? Maybe other type of remotes, like mercurial or something?
+
+## Remote Interface
+
+- list all machines - from the config file?
+- list all services, and a machine
+- free a service -- need name. We need extra field to identify service.
+- get status of services, check also upstream repo

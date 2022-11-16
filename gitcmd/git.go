@@ -12,19 +12,19 @@ import (
 )
 
 type Git struct {
-	url   string
-	mount string
-	dirs  []string
+	upstream string
+	mount    string
+	dirs     []string
 
 	cwd string
 }
 
 // New returns a pointer to an intialized Git.
-func New(url, mount string, dirs []string) *Git {
+func New(upstream, mount string, dirs []string) *Git {
 	g := &Git{
-		url:   url,
-		mount: mount,
-		dirs:  dirs,
+		upstream: upstream,
+		mount:    mount,
+		dirs:     dirs,
 	}
 	return g
 }

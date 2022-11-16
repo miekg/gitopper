@@ -1,9 +1,9 @@
 [global]
-url = "https://github.com/miekg/blah-origin"  # repository where to download from
+upstream = "https://github.com/miekg/blah-origin"  # repository where to download from
 mount = "/tmp"                                # directory where to download to, mount+service is used as path
 
-[[machines]]
-name = "grafana.atoom.net"
+[[services]]
+machine = "grafana.atoom.net"
 service = "grafana-server" # as used in systemd
 package = "grafana"  # as used by package mgmt
 action = "reload"    # what to do when files are changed

@@ -2,9 +2,7 @@ package main
 
 import (
 	"os"
-	"path"
 
-	"github.com/miekg/gitopper/gitcmd"
 	"github.com/miekg/gitopper/log"
 	toml "github.com/pelletier/go-toml/v2"
 )
@@ -21,28 +19,18 @@ func main() {
 	}
 
 	// config check - abstract so we can do it seperately
-	for _, m := range cfg.Machines {
-		m1 := merge(cfg.Global, m)
-		log.Infof("Machine %q", m1.Name)
+	for _, s := range cfg.Services {
+		s1 := merge(cfg.Global, s)
+		log.Infof("Machine %q", s1.Machine)
 
-		dirs := []string{}
-		for _, d := range m1.Dirs {
-			dirs = append(dirs, d.Link)
-		}
-
-		repo := path.Join(m1.Mount, m1.Service)
-		gc := gitcmd.New(m1.URL, repo, dirs)
+		gc := NewGitCmd(s1)
 
 		// Initial checkout
 		err := gc.Checkout()
 		if err != nil {
-			log.Warningf("Machine %q, error checking out: %s", m1.Name, err)
+			log.Warningf("Machine %q, error checking out: %s", s1.Machine, err)
 		}
 		hash, _ := gc.Hash()
-		log.Infof("Machine %q, repository in %q with %q", m1.Name, repo, hash)
+		log.Infof("Machine %q, repository in %q with %q", s1.Machine, repo, hash)
 	}
-
-	// Keep up to date
-
-	// Listen to commands, cmdline rules.
 }

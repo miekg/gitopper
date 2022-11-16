@@ -3,6 +3,8 @@ is actually a sane way of doing thing.
 
 The mind says 'yes', reality says '...' ?
 
+
+
 ## Notes
 
 ## metrics

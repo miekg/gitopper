@@ -13,11 +13,11 @@ import (
 
 // Service contains the service configuration tied to a specific machine.
 type Service struct {
+	Upstream string // The URL of the (upstream) Git repository.
 	Service  string // Identifier for the service - will be used for action.
 	Machine  string // Identifier for this machine - may be shared with multiple machines.
 	Package  string // The package that might need installing.
-	Action   string `toml:"omitempty"` // The systemd action to take when files have changed.
-	Upstream string `toml:"omitempty"` // The URL of the (upstream) Git repository.
+	Action   string // The systemd action to take when files have changed.
 	Mount    string // Together with Service this is the directory where the sparse git repo is checked out.
 	Dirs     []Dir  // How to map our local directories to the git repository.
 }
@@ -37,7 +37,7 @@ func merge(upper, lower Service) Service {
 	return lower
 }
 
-func NewGitCmd(s Service) *gitcmd.Git {
+func (s Service) newGitCmd() *gitcmd.Git {
 	dirs := []string{}
 	for _, d := range s.Dirs {
 		dirs = append(dirs, d.Link)
@@ -47,8 +47,9 @@ func NewGitCmd(s Service) *gitcmd.Git {
 
 // TrackUpstream does all the administration to track upstream and issue systemctl commands to keep the process
 // informed.
-func (s Service) TrackUpstream(stop chan bool) {
-	gc := NewGitCmd(s)
+func (s Service) trackUpstream(stop chan bool) {
+	gc := s.newGitCmd()
+	log.Infof("Launching tracking routine for %q/%q", s.Machine, s.Service)
 	for {
 		time.Sleep(30 * time.Second) // track in service?
 		if err := gc.Pull(); err != nil {
@@ -62,9 +63,15 @@ func (s Service) TrackUpstream(stop chan bool) {
 			log.Warningf("Machine %q, error diffing repo %q: %s", s.Machine, s.Upstream, err)
 		}
 		if !changed {
+			log.Infof("Machine %q, no diff in repo %q", s.Machine, s.Upstream)
 			continue
 		}
 
+		log.Infof("Machine %q, diff in repo %q, pinging service: %s", s.Machine, s.Upstream, s.Service)
+		if err := s.systemctl(); err != nil {
+			// usually this tell you nothing, because atual error is only visible with journald
+			log.Warningf("Machine %q, error running systemcl: %s", s.Machine, err)
+		}
 	}
 }
 

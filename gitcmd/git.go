@@ -58,7 +58,7 @@ func (g *Git) Checkout() error {
 	}
 
 	g.cwd = ""
-	_, err := g.run("clone", "--filter=blob:none", "--no-checkout", "--sparse", g.url, g.mount)
+	_, err := g.run("clone", "--filter=blob:none", "--no-checkout", "--sparse", g.upstream, g.mount)
 	if err != nil {
 		return err
 	}
@@ -120,3 +120,5 @@ func (g *Git) Hash() (string, error) {
 
 	return hash, nil
 }
+
+func (g *Git) Repo() string { return g.mount }

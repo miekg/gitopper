@@ -1,0 +1,14 @@
+#[global]
+#url = "git@github.com/miekg/blah-origin"
+
+[[machines]]
+
+[[machines]]
+name = "grafana.atoom.net"
+package = "grafana"
+action = "reload grafana-server"
+mount = "/mnt/grafana"
+dirs = [
+    { local = "/etc/grafana", link = "grafana/etc", single = false },
+    { local = "/var/lib/grafana/dashboards", link = "grafana/dashboards", single = false }
+]

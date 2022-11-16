@@ -15,3 +15,12 @@ type Dir struct {
 	Link   string // The subdirectory inside the git repo to map to.
 	Single bool   // unused... is a single file?
 }
+
+// merge merges anything defined in upper into lower and returns the new Machine. Currently this is only
+// done for the URL field.
+func merge(upper, lower Machine) Machine {
+	if upper.URL != "" {
+		lower.URL = upper.URL
+	}
+	return lower
+}

@@ -19,23 +19,24 @@ func main() {
 	if err := toml.Unmarshal([]byte(doc), &cfg); err != nil {
 		log.Fatal(err)
 	}
-
 	// config check - abstract so we can do it seperately
-	for _, s := range cfg.Services {
-		s1 := merge(cfg.Global, s)
-		log.Infof("Machine %q %q", s1.Machine, s1.Upstream)
 
+	for _, s := range cfg.Services {
+		s1 := s.merge(cfg.Global)
+
+		log.Infof("Machine %q %q", s1.Machine, s1.Upstream)
 		gc := s1.newGitCmd()
 
-		// Initial checkout
+		// Initial checkout - if needed.
 		err := gc.Checkout()
 		if err != nil {
 			log.Warningf("Machine %q, error checking out: %s", s1.Machine, err)
+			// continue??
 		}
 		hash, _ := gc.Hash()
 		log.Infof("Machine %q, repository in %q with %q", s1.Machine, gc.Repo(), hash)
 
-		// all succesfully down. Do the bind mounts
+		// all succesfully done, do the bind mounts and start our puller
 		s1.bindmount()
 		go s1.trackUpstream(nil)
 	}

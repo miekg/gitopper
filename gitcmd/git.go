@@ -33,7 +33,7 @@ func (g *Git) run(args ...string) ([]byte, error) {
 	ctx := context.TODO()
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = g.cwd
-	log.Infof("running in %q with %v", cmd.Dir, args)
+	log.Infof("running in %q %v", cmd.Dir, cmd.Args)
 
 	out, err := cmd.CombinedOutput()
 	log.Debug(string(out))

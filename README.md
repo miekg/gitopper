@@ -34,6 +34,8 @@ fatal: bad revision 'HEAD^'
 
 We may want to wipe a repo and let the automation reclone in an emergency.
 
+bind mounts are added on top of each other
+
 ### config
 
 ~~~
@@ -74,7 +76,31 @@ Do we need plugins for this things? Maybe other type of remotes, like mercurial 
 
 ## Remote Interface
 
+first metrics, then remote interface
+
+Rest like???
+
 - list all machines - from the config file?
-- list all services, and a machine
-- free a service -- need name. We need extra field to identify service.
+- list all services from a machine - should be from the config as well...
+- then for a service:
+    * freeze ?duration=50
+    * rollback ?to=<hash> (can error); rollback also freezes, rollback isn't a permanent state.
+    * unfreeze
 - get status of services, check also upstream repo
+
+curl essentially
+
+basic auth, then system auth... account exists... and in special group??
+
+-ctl is basically a curl client, but make a client, simple as hell
+
+gitopper-ctl list machines
+gitopper-ctl list services @machine
+
+gitopper-ctl status <service-name> @machine  git, pull, last update??
+
+gitopper-ctl freeze <service-name> [<duration>] @machine
+gitopper-ctl unfreeze <service-name> @machine
+gitopper-ctl rollback <service-name> <hash> @machine
+
+TEXT OUTPUT? So not really, or json? Never know if you have everything???

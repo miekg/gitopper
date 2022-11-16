@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"os/exec"
 	"path"
+	"sync"
 	"time"
 
 	"github.com/miekg/gitopper/gitcmd"
 	"github.com/miekg/gitopper/log"
+	"go.science.ru.nl/mountinfo"
 )
 
 // Service contains the service configuration tied to a specific machine.
@@ -20,6 +22,9 @@ type Service struct {
 	Action   string // The systemd action to take when files have changed.
 	Mount    string // Together with Service this is the directory where the sparse git repo is checked out.
 	Dirs     []Dir  // How to map our local directories to the git repository.
+
+	State
+	m *sync.RWMutex // protects state
 }
 
 type Dir struct {
@@ -28,13 +33,22 @@ type Dir struct {
 	Single bool   // unused... is a single file?
 }
 
-// merge merges anything defined in upper into lower and returns the new Machine. Currently this is only
+// Current State of a service.
+type State int
+
+const (
+	StateOK State = iota
+	StateFreeze
+	StateRollback
+)
+
+// merge merges anything defined in s1 into s and returns the new Service. Currently this is only
 // done for the Upstream field.
-func merge(upper, lower Service) Service {
-	if upper.Upstream != "" {
-		lower.Upstream = upper.Upstream
+func (s Service) merge(s1 Service) Service {
+	if s1.Upstream != "" {
+		s.Upstream = s1.Upstream
 	}
-	return lower
+	return s
 }
 
 func (s Service) newGitCmd() *gitcmd.Git {
@@ -87,9 +101,17 @@ func (s Service) bindmount() error {
 		gitdir := path.Join(s.Mount, s.Service)
 		gitdir = path.Join(gitdir, d.Link)
 
+		if ok, err := mountinfo.Mounted(d.Local); err == nil && ok {
+			log.Infof("Directory %q is already mounted", d.Local)
+			continue
+		}
+
 		ctx := context.TODO()
-		cmd := exec.CommandContext(ctx, "mount", "-r", "--bind", d.Link, gitdir)
-		fmt.Printf("%+v\n", cmd)
+		cmd := exec.CommandContext(ctx, "mount", "-r", "--bind", gitdir, d.Local)
+		log.Infof("running %v", cmd.Args)
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to mount %q: %s", gitdir, err)
+		}
 	}
 	return nil
 }

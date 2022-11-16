@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,7 +19,6 @@ func main() {
 	if err := toml.Unmarshal([]byte(doc), &cfg); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%+v\n", cfg.Global)
 
 	// config check - abstract so we can do it seperately
 	for _, s := range cfg.Services {

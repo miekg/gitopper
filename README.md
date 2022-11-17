@@ -67,6 +67,11 @@ See proto/proto.go for the defined interface. Interaction is REST, thus JSON. Yo
 * list services run on this host
 * list a specific service
 
+* freeze a service to the current git commit
+* unfreeze a service, i.e. to let it pull again
+
+*do we need a freeze all for everything on the system?*
+
 ## Client
 
 A client is included in cmd/gitopperctl. It has it's own README.md.

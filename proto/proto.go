@@ -7,7 +7,7 @@ type (
 	}
 
 	ListServices struct {
-		Services []string `json:"services"`
+		ListServices []ListService `json:"services"`
 	}
 
 	ListService struct {

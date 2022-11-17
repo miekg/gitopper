@@ -97,8 +97,8 @@ func (s *Service) trackUpstream(stop chan bool) {
 
 		metricServiceHash.WithLabelValues(s.Service, gc.Hash(), s.State().String()).Set(1)
 
-		if s.State() == StateFreeze {
-			log.Warningf("Machine %q is service %q is frozen, not pulling", s.Machine, s.Service)
+		if state := s.State(); state == StateFreeze || state == StateRollback {
+			log.Warningf("Machine %q is service %q is %s, not pulling", s.Machine, s.Service, state)
 			continue
 		}
 

@@ -38,7 +38,7 @@ func query(at, method string, args ...string) (body []byte, err error) {
 	case "GET":
 		resp, err = c.Get(url)
 	case "POST":
-		// 	resp, err = c.Post(url) more stuff
+		resp, err = c.Post(url, "", nil)
 	}
 	if err != nil {
 		return nil, err
@@ -72,10 +72,9 @@ func main() {
 							if err := json.Unmarshal(body, &lm); err != nil {
 								return err
 							}
-							tbl := table.New("ID", "MACHINE")
+							tbl := table.New("#", "MACHINE")
 							for i, m := range lm.Machines {
 								tbl.AddRow(i, m)
-
 							}
 							tbl.Print()
 							return nil
@@ -97,10 +96,9 @@ func main() {
 							if err := json.Unmarshal(body, &ls); err != nil {
 								return err
 							}
-							tbl := table.New("ID", "SERVICE")
-							for i, s := range ls.Services {
-								tbl.AddRow(i, s)
-
+							tbl := table.New("#", "SERVICE", "HASH", "STATE")
+							for i, ls := range ls.ListServices {
+								tbl.AddRow(i, ls.Service, ls.Hash, ls.State)
 							}
 							tbl.Print()
 							return nil
@@ -131,6 +129,46 @@ func main() {
 							tbl.AddRow(ls.Service, ls.Hash, ls.State)
 							tbl.Print()
 							return nil
+						},
+					},
+				},
+			},
+			{
+				Name:    "state",
+				Aliases: []string{"st"},
+				Usage:   "list machines, services or a single service",
+				Subcommands: []*cli.Command{
+					{
+						Name:    "freeze",
+						Aliases: []string{"m"},
+						Usage:   "state freeze @machine <service>",
+						Action: func(ctx *cli.Context) error {
+							at, err := atMachine(ctx)
+							if err != nil {
+								return err
+							}
+							service := ctx.Args().Get(1)
+							if service == "" {
+								return fmt.Errorf("need service")
+							}
+							_, err = query(at, "POST", "state", "freeze", service)
+							return err
+						},
+					},
+					{
+						Name:  "unfreeze",
+						Usage: "state unfreeze @machine <service>",
+						Action: func(ctx *cli.Context) error {
+							at, err := atMachine(ctx)
+							if err != nil {
+								return err
+							}
+							service := ctx.Args().Get(1)
+							if service == "" {
+								return fmt.Errorf("need service")
+							}
+							_, err = query(at, "POST", "state", "unfreeze", service)
+							return err
 						},
 					},
 				},

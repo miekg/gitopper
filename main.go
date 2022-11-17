@@ -45,8 +45,6 @@ func main() {
 	if err := c.Valid(); err != nil {
 		log.Fatalf("The configuration is not valid: %s", err)
 	}
-	// config check - abstract so we can do it seperately
-	// start webservies
 
 	for _, s := range c.Services {
 		s1 := s.merge(c.Global, duration)
@@ -66,7 +64,7 @@ func main() {
 		if err := s1.bindmount(); err != nil {
 			log.Fatalf("Can not setup bind mounts: %s", err)
 		}
-		go s1.trackUpstream(nil)
+		go s1.trackUpstream(nil) // TODO: stop goroutines, could also use context.
 	}
 
 	router := newRouter(c)

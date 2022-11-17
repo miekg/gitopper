@@ -6,6 +6,8 @@ Watch a remote git repo, pull changes and HUP the service process. For a design 
 A sparse (but with full history) git checkout will be done, so each service will only see the files
 it will actually need.
 
+- create target directory for bind mounts.... package should do this.
+
 ## Bootstrapping
 
 
@@ -30,6 +32,7 @@ dirs = [
 ~~~
 
 ## Interfaces
+
 
 metrics, rest-like interface, return json, make client show it nicely.
 

@@ -94,10 +94,9 @@ func (g *Git) Diff() (bool, error) {
 	args = append(args, g.dirs...) // can we check multiple dirs?
 	_, err := g.run(args...)
 	if err != nil {
-		return false, err
-	}
-	if exitError, ok := err.(*exec.ExitError); ok {
-		return exitError.ExitCode() == 0, nil
+		if exitError, ok := err.(*exec.ExitError); ok {
+			return exitError.ExitCode() == 0, nil
+		}
 	}
 
 	return false, nil

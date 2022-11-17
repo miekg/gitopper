@@ -89,6 +89,7 @@ func (s Service) newGitCmd() *gitcmd.Git {
 func (s Service) trackUpstream(stop chan bool) {
 	gc := s.newGitCmd()
 	log.Infof("Launched tracking routine for %q/%q", s.Machine, s.Service)
+	metricServiceHash.WithLabelValues(s.Service, gc.Hash(), s.State().String()).Set(1)
 	for {
 		time.Sleep(s.Duration)
 
@@ -145,10 +146,15 @@ func (s Service) bindmount() error {
 		ctx := context.TODO()
 		cmd := exec.CommandContext(ctx, "mount", "-r", "--bind", gitdir, d.Local)
 		log.Infof("running %v", cmd.Args)
-		if err := cmd.Run(); err != nil {
+		err := cmd.Run()
+		if err != nil {
+			if exitError, ok := err.(*exec.ExitError); ok {
+				if e := exitError.ExitCode(); e != 0 {
+					return fmt.Errorf("failed to mount %q, exit code %d", gitdir, e)
+				}
+			}
 			return fmt.Errorf("failed to mount %q: %s", gitdir, err)
 		}
-		// exit code ...
 	}
 	return nil
 }

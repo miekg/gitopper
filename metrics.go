@@ -8,7 +8,7 @@ import (
 const namespace = "gitopper"
 
 var (
-	metricMachineInfo = promauto.NewCounterVec(prometheus.CounterOpts{
+	metricMachineInfo = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Subsystem: "machine",
 		Name:      "info",

@@ -4,13 +4,11 @@ Watch a remote git repo, pull changes and HUP the service process. For a design 
 <https://miek.nl/2022/november/15/provisioning-services/>.
 
 A sparse (but with full history) git checkout will be done, so each service will only see the files
-it will actually need.
+it will actually need. Several bind mounts are then setup to give the service access to the file in
+Git.
 
-- create target directory for bind mounts.... package should do this.
-add: -h options, multiple hostnames, for testing and other purposes.
-
-## Bootstrapping
-
+If the target directories for the bind mounts don't exist they will not (yet) be created. This is
+now also a fatal error.
 
 ## Config file
 
@@ -20,76 +18,45 @@ upstream = "https://github.com/miekg/blah-origin"  # repository where to downloa
 mount = "/tmp"                                     # directory where to download to, mount+service is used as path
 
 [[services]]
-machine = "grafana.atoom.net" # hostname of the machine, so it know what to do there.
-service = "grafana-server" # service identifier, if it's used by systemd it must be the systemd service name
-package = "grafana"  # as used by package mgmt, may be empty
-user = "grafana"     # do the checkout with this user
-action = "reload"    # what to do when files are changed, maybe empty.
-mount = "/tmp/grafana1" # where to download the repo - we don't care
+machine = "grafana.atoom.net" # hostname of the machine, so a host knows when to pick this up.
+service = "grafana-server"    # service identifier, if it's used by systemd it must be the systemd service name
+package = "grafana"           # as used by package mgmt, may be empty (not implemented yet)
+user = "grafana"              # do the checkout with this user
+action = "reload"             # call systemctl <action> <service> when the git repo changes.
+mount = "/tmp/grafana1"       # where to put the downloaded download (we don't care - might be removed)
 dirs = [
     { local = "/etc/grafana", link = "grafana/etc", single = false },
     { local = "/var/lib/grafana/dashboards", link = "grafana/dashboards", single = false }
 ]
 ~~~
 
-## Interfaces
+### REST
 
+See proto/proto.go for the defined interface. Interaction is REST, thus JSON. You can
 
-metrics, rest-like interface, return json, make client show it nicely.
-
-## "Admin" Interface
-
-- list all machines - from the config file?
-- list all services from a machine - should be from the config as well...
-- then for a service:
-    * freeze ?duration=50
-    * rollback ?to=<hash> (can error); rollback also freezes, rollback isn't a permanent state.
-    * unfreeze
-- get status of services, check also upstream repo., hash
-
-curl essentially
-
-basic auth, then system auth... account exists... and in special group??
+* list all defined machines
+* list services run on this host
+* list a specific service
 
 ## Client
 
-Included is a little client, called `gitopper-cli` that eases remote interaction with the server's
-REST interface.
+A client is included in cmd/gitopperctl. It has it's own README.md.
 
--ctl is basically a curl client, but make a client, simple as hell
+## Notes and Crap
 
-Generic options. -u user -p <passwd> ???
+TODO in the ctl:
 
-GETs
-
-These get json back:
-
-from config by itself:
-gitopper-ctl list|ls machines
-    /list/machines which server??
-
-gitopper-ctl list|ls @machine
-    /list/services
-gitopper-ctl iist|ls @machine <service-name>
-   /list/service/<name>
-
-These are just posts, without json reply, just HTTP status code... with json payload??
-
-POSTs:
-
-gitopper-ctl freeze @machine <service-name> [<duration>]
+gitopperctl freeze @machine <service-name> [<duration>]
     /state/freeze/<name>?dur=5s
 
-gitopper-ctl unfreeze @machine <service-name>
+gitopperctl unfreeze @machine <service-name>
     /state/unfreeze/<name>
 
-gitopper-ctl rollback @machine <service-name> <hash>
+gitopperctl rollback @machine <service-name> <hash>
     /state/rollback/<name>?to=<hash>
 
-gitopper-cli redo @machine <service-name>
+gitoppercli redo @machine <service-name>
     /state/redo/<name>
-
-json protocol, text output from our tooling
 
 ## Authentication
 
@@ -105,8 +72,11 @@ gitopper_service_ok{service="..."} 1.0
 gitopper_service_failure_count{} 1.0
 ~~~
 
+Some are implemented under the /metrics endpoint.
+
 ## TODO
 
-* Use https://cli.urfave.org/v2/getting-started/ for command cli handling
-* Write client - to check webserving side.
+* Bootstrapping
 * Reload config on the fly and re-initialize then
+* create target directory for bind mounts.... package should do this.
+* add: -h options, multiple hostnames, for testing and other purposes.

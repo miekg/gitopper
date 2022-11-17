@@ -25,7 +25,15 @@ The checked out git repo in /tmp/grafana1/grafana-server should _only_ contain t
 thanks to the sparse checkout. Changes made to the `crap` subdir in that repo do not trigger a
 grafana restart (not even sure grafana actually needs this).
 
-## Config file
+Then with cmd/gitopperctl/gitopperctl you can query the server a bit:
+
+~~~
+% ./gitopperctl list service @localhost grafana-server
+SERVICE         HASH     STATE
+grafana-server  606eb57  OK
+~~~
+
+## Config File
 
 ~~~ toml
 [global]
@@ -91,8 +99,8 @@ Some are implemented under the /metrics endpoint.
 
 ## TODO
 
-* TESTST
+* TESTS
 * Bootstrapping
-* Reload config on the fly and re-initialize then
-* create target directory for bind mounts.... package should do this.
+* Reload config on the fly and re-initialize
+* create target directory for bind mounts.... we should do this (correct user??)
 * add: -h options, multiple hostnames, for testing and other purposes.

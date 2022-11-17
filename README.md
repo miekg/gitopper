@@ -7,6 +7,7 @@ A sparse (but with full history) git checkout will be done, so each service will
 it will actually need.
 
 - create target directory for bind mounts.... package should do this.
+add: -h options, multiple hostnames, for testing and other purposes.
 
 ## Bootstrapping
 
@@ -108,3 +109,4 @@ gitopper_service_failure_count{} 1.0
 
 * Use https://cli.urfave.org/v2/getting-started/ for command cli handling
 * Write client - to check webserving side.
+* Reload config on the fly and re-initialize then

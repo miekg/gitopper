@@ -93,12 +93,11 @@ func (g *Git) Pull() (bool, error) {
 	g.cwd = g.mount
 	defer func() { g.cwd = "" }()
 
-	out, err := g.run("pull")
+	out, err := g.run("pull", "--stat")
 	if err != nil {
 		return false, err
 	}
-	// sometimes up-to-date, or up to date
-	return !strings.HasPrefix(string(out), "Already up"), nil
+	return g.OfInterest(out), nil
 }
 
 // Hash returns the git hash of HEAD in the repo in g.mount. Empty string is returned in case of an error.
@@ -106,17 +105,11 @@ func (g *Git) Hash() string {
 	g.cwd = g.mount
 	defer func() { g.cwd = "" }()
 
-	out, err := g.run("rev-parse", "HEAD")
+	out, err := g.run("rev-parse", "--short", "HEAD")
 	if err != nil {
 		return ""
 	}
-
-	hash := string(out)
-	if len(hash) >= 41 {
-		hash = hash[:40]
-	}
-
-	return hash
+	return strings.TrimSpace(string(out))
 }
 
 func (g *Git) Repo() string { return g.mount }

@@ -24,16 +24,15 @@ type Service struct {
 	Mount    string // Together with Service this is the directory where the sparse git repo is checked out.
 	Dirs     []Dir  // How to map our local directories to the git repository.
 
-	Duration      time.Duration `toml:"_"` // how much to sleep between pulls
-	state         State
-	*sync.RWMutex               // protects State
-	freezeDur     time.Duration // how long to freeze for, 0 is until unfreeze
+	Duration     time.Duration `toml:"_"` // how much to sleep between pulls
+	state        State
+	sync.RWMutex               // protects State
+	freezeDur    time.Duration // how long to freeze for, 0 is until unfreeze
 }
 
 type Dir struct {
-	Local  string // The directory on the local filesystem.
-	Link   string // The subdirectory inside the git repo to map to.
-	Single bool   // unused... is a single file?
+	Local string // The directory on the local filesystem.
+	Link  string // The subdirectory inside the git repo to map to.
 }
 
 // Current State of a service.
@@ -54,13 +53,13 @@ func (s State) String() string {
 	return ""
 }
 
-func (s Service) State() State {
+func (s *Service) State() State {
 	s.RLock()
 	defer s.RUnlock()
 	return s.state
 }
 
-func (s Service) SetState(st State) {
+func (s *Service) SetState(st State) {
 	s.Lock()
 	defer s.Unlock()
 	s.state = st
@@ -68,16 +67,15 @@ func (s Service) SetState(st State) {
 
 // merge merges anything defined in s1 into s and returns the new Service. Currently this is only
 // done for the Upstream field.
-func (s Service) merge(s1 Service, d time.Duration) Service {
+func (s *Service) merge(s1 *Service, d time.Duration) *Service {
 	if s1.Upstream != "" {
 		s.Upstream = s1.Upstream
 	}
 	s.Duration = d
-	s.RWMutex = new(sync.RWMutex)
 	return s
 }
 
-func (s Service) newGitCmd() *gitcmd.Git {
+func (s *Service) newGitCmd() *gitcmd.Git {
 	dirs := []string{}
 	for _, d := range s.Dirs {
 		dirs = append(dirs, d.Link)
@@ -87,7 +85,7 @@ func (s Service) newGitCmd() *gitcmd.Git {
 
 // TrackUpstream does all the administration to track upstream and issue systemctl commands to keep the process
 // informed.
-func (s Service) trackUpstream(stop chan bool) {
+func (s *Service) trackUpstream(stop chan bool) {
 	gc := s.newGitCmd()
 	log.Infof("Launched tracking routine for %q/%q", s.Machine, s.Service)
 	metricServiceHash.WithLabelValues(s.Service, gc.Hash(), s.State().String()).Set(1)
@@ -120,7 +118,7 @@ func (s Service) trackUpstream(stop chan bool) {
 	}
 }
 
-func (s Service) systemctl() error {
+func (s *Service) systemctl() error {
 	if s.Action == "" {
 		return nil
 	}
@@ -130,7 +128,7 @@ func (s Service) systemctl() error {
 	return cmd.Run()
 }
 
-func (s Service) bindmount() error {
+func (s *Service) bindmount() error {
 	for _, d := range s.Dirs {
 		gitdir := path.Join(s.Mount, s.Service)
 		gitdir = path.Join(gitdir, d.Link)

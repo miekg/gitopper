@@ -6,8 +6,11 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"os/user"
 	"path"
+	"strconv"
 	"strings"
+	"syscall"
 
 	"go.science.ru.nl/log"
 )
@@ -16,16 +19,18 @@ type Git struct {
 	upstream string
 	mount    string
 	dirs     []string
+	user     string
 
 	cwd string
 }
 
 // New returns a pointer to an intialized Git.
-func New(upstream, mount string, dirs []string) *Git {
+func New(upstream, mount, user string, dirs []string) *Git {
 	g := &Git{
 		upstream: upstream,
 		mount:    mount,
 		dirs:     dirs,
+		user:     user,
 	}
 	return g
 }
@@ -34,7 +39,13 @@ func (g *Git) run(args ...string) ([]byte, error) {
 	ctx := context.TODO()
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = g.cwd
-	log.Infof("running in %q %v", cmd.Dir, cmd.Args)
+	if g.user != "" {
+		uid, gid := userLookup(g.user)
+		cmd.SysProcAttr = &syscall.SysProcAttr{}
+		cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
+	}
+
+	log.Infof("running in %q as %q %v", cmd.Dir, g.user, cmd.Args)
 
 	out, err := cmd.CombinedOutput()
 	log.Debug(string(out))
@@ -109,3 +120,13 @@ func (g *Git) Hash() string {
 }
 
 func (g *Git) Repo() string { return g.mount }
+
+func userLookup(u string) (int64, int64) {
+	u1, err := user.Lookup(u)
+	if err != nil {
+		return 0, 0
+	}
+	uid, _ := strconv.ParseInt(u1.Uid, 10, 32)
+	gid, _ := strconv.ParseInt(u1.Gid, 10, 32)
+	return uid, gid
+}

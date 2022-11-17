@@ -19,6 +19,7 @@ type Service struct {
 	Service  string // Identifier for the service - will be used for action.
 	Machine  string // Identifier for this machine - may be shared with multiple machines.
 	Package  string // The package that might need installing.
+	User     string // what user to use for checking out the repo.
 	Action   string // The systemd action to take when files have changed.
 	Mount    string // Together with Service this is the directory where the sparse git repo is checked out.
 	Dirs     []Dir  // How to map our local directories to the git repository.
@@ -81,7 +82,7 @@ func (s Service) newGitCmd() *gitcmd.Git {
 	for _, d := range s.Dirs {
 		dirs = append(dirs, d.Link)
 	}
-	return gitcmd.New(s.Upstream, path.Join(s.Mount, s.Service), dirs)
+	return gitcmd.New(s.Upstream, path.Join(s.Mount, s.Service), s.User, dirs)
 }
 
 // TrackUpstream does all the administration to track upstream and issue systemctl commands to keep the process
@@ -114,7 +115,6 @@ func (s Service) trackUpstream(stop chan bool) {
 
 		log.Infof("Machine %q, diff in repo %q, pinging service: %s", s.Machine, s.Upstream, s.Service)
 		if err := s.systemctl(); err != nil {
-			// usually this tell you nothing, because atual error is only visible with journald
 			log.Warningf("Machine %q, error running systemcl: %s", s.Machine, err)
 		}
 	}
@@ -126,8 +126,8 @@ func (s Service) systemctl() error {
 	}
 	ctx := context.TODO()
 	cmd := exec.CommandContext(ctx, "systemctl", s.Action, s.Service)
-	fmt.Printf("%+v\n", cmd)
-	return nil
+	log.Infof("running %v", cmd.Args)
+	return cmd.Run()
 }
 
 func (s Service) bindmount() error {

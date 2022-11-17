@@ -1,50 +1,38 @@
-Blah (name TBD) is an experiment to see if https://miek.nl/2022/november/15/provisioning-services/
-is actually a sane way of doing thing.
+# Gitopper
 
-The mind says 'yes', reality says '...' ?
+Watch a remote git repo, pull changes and HUP the service process. For a design doc see:
+<https://miek.nl/2022/november/15/provisioning-services/>.
 
-## Notes
+A sparse (but with full history) git checkout will be done, so each service will only see the files
+it will actually need.
 
-## metrics
+## Bootstrapping
 
-~~~ txt
-gitopper_machine_info{machine="..."} 1.0
-gitopper_service_hash{service="...", hash="..."} 1.0
-gitopper_service_frozen{service="..."} 1.0
-gitopper_service_ok{service="..."} 1.0
-gitopper_service_failure_count{} 1.0
+
+## Config file
+
+~~~ toml
+[global]
+upstream = "https://github.com/miekg/blah-origin"  # repository where to download from
+mount = "/tmp"                                # directory where to download to, mount+service is used as path
+
+[[services]]
+machine = "grafana.atoom.net" # hostname of the machine, so it know what to do there.
+service = "grafana-server" # as used in systemd
+package = "grafana"  # as used by package mgmt
+action = "reload"    # what to do when files are changed
+mount = "/tmp/grafana1" # where to download the repo - we don't care
+dirs = [
+    { local = "/etc/grafana", link = "grafana/etc", single = false },
+    { local = "/var/lib/grafana/dashboards", link = "grafana/dashboards", single = false }
+]
 ~~~
 
-## Features
+## Interfaces
 
-Noop feature
+metrics, rest-like interface, return json, make client show it nicely.
 
-## depth
-
--depth 1 is useless;
-we want all systems have the same history, and if the repo becomes big *all* clients will see that
-pressure at the same time, not in the ordering in which they came up and received their first pull.
-
-## first commit
-
-There can be 'no commit' which is ok.
-
-~~~
-git df HEAD^ HEAD -- grafana
-fatal: bad revision 'HEAD^'
-~~~
-
-## wipe a repo
-
-We may want to wipe a repo and let the automation reclone in an emergency.
-
-### config
-
-## Code
-
-Do we need plugins for this things? Maybe other type of remotes, like mercurial or something?
-
-## Remote Interface
+## "Admin" Interface
 
 - list all machines - from the config file?
 - list all services from a machine - should be from the config as well...
@@ -57,6 +45,11 @@ Do we need plugins for this things? Maybe other type of remotes, like mercurial 
 curl essentially
 
 basic auth, then system auth... account exists... and in special group??
+
+## Client
+
+Included is a little client, called `gitopper-cli` that eases remote interaction with the server's
+REST interface.
 
 -ctl is basically a curl client, but make a client, simple as hell
 
@@ -71,3 +64,17 @@ gitopper-ctl rollback <service-name> <hash> @machine
 gitopper-ctl redo <service-name> @machine    # delete repo, and refetch - impact on service?
 
 TEXT OUTPUT? So not really, or json? Never know if you have everything???
+
+## Authentication
+
+...
+
+## metrics
+
+~~~ txt
+gitopper_machine_info{machine="..."} 1.0
+gitopper_service_hash{service="...", hash="..."} 1.0
+gitopper_service_frozen{service="..."} 1.0
+gitopper_service_ok{service="..."} 1.0
+gitopper_service_failure_count{} 1.0
+~~~

@@ -6,4 +6,7 @@ type Config struct {
 	Services []Service
 }
 
-// do small config check
+// Valid checks the config in c and returns nil of all mandatory fields have been set.
+func (c Config) Valid() error {
+	return nil
+}

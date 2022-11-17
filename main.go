@@ -19,6 +19,10 @@ func main() {
 	if err := toml.Unmarshal([]byte(doc), &cfg); err != nil {
 		log.Fatal(err)
 	}
+
+	if err := cfg.Valid(); err != nil {
+		log.Fatalf("The configuration is not valid: %s", err)
+	}
 	// config check - abstract so we can do it seperately
 	// start webservies
 

@@ -2,17 +2,17 @@
 package proto
 
 type (
-	ListMachine struct {
-		Machines []string
+	ListMachines struct {
+		Machines []string `json:"machines"`
 	}
 
 	ListServices struct {
-		Services []string
+		Services []string `json:"services"`
 	}
 
 	ListService struct {
-		Service string
-		Hash    string
-		State   string
+		Service string `json:"service"`
+		Hash    string `json:"hash"`
+		State   string `json:"state"`
 	}
 )

@@ -21,6 +21,9 @@ func (c Config) Valid() error {
 		if s1.Mount == "" {
 			return fmt.Errorf("machine #%d %q, has empty mount", i, s1.Machine)
 		}
+		if s1.Service == "" {
+			return fmt.Errorf("machine #%d %q, has empty service", i, s1.Service)
+		}
 	}
 	return nil
 }

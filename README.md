@@ -63,6 +63,7 @@ GETs
 
 These get json back:
 
+from config by itself:
 gitopper-ctl list|ls machines
     /list/machines which server??
 

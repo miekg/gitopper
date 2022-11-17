@@ -8,9 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gorilla/mux"
 	toml "github.com/pelletier/go-toml/v2"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.science.ru.nl/log"
 )
 
@@ -71,8 +69,7 @@ func main() {
 		go s1.trackUpstream(nil)
 	}
 
-	router := mux.NewRouter()
-	router.Path("/metrics").Handler(promhttp.Handler())
+	router := newRouter(c)
 
 	go func() {
 		if err := http.ListenAndServe(*flagAddr, router); err != nil {

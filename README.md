@@ -10,6 +10,21 @@ Git.
 If the target directories for the bind mounts don't exist they will not (yet) be created. This is
 now also a fatal error.
 
+## Quickstart
+
+- Install grafana OSS version from the their website (just using this as a test case, nothing
+  special here)
+- `mkdir /etc/grafana` and `mkdir -p /var/lib/grafana/dashboards` (see above)
+- Compile the gitopper binary: `go build`
+- Start as root: `sudo ./gitopper -c config`
+
+And things should work then. I.e. in /etc/grafana you should see the contant of the
+*miekg/blah-origin* repository.
+
+The checked out git repo in /tmp/grafana1/grafana-server should _only_ contain the grafana directory
+thanks to the sparse checkout. Changes made to the `crap` subdir in that repo do not trigger a
+grafana restart (not even sure grafana actually needs this).
+
 ## Config file
 
 ~~~ toml
@@ -25,8 +40,8 @@ user = "grafana"              # do the checkout with this user
 action = "reload"             # call systemctl <action> <service> when the git repo changes.
 mount = "/tmp/grafana1"       # where to put the downloaded download (we don't care - might be removed)
 dirs = [
-    { local = "/etc/grafana", link = "grafana/etc", single = false },
-    { local = "/var/lib/grafana/dashboards", link = "grafana/dashboards", single = false }
+    { local = "/etc/grafana", link = "grafana/etc" },
+    { local = "/var/lib/grafana/dashboards", link = "grafana/dashboards" }
 ]
 ~~~
 
@@ -76,6 +91,7 @@ Some are implemented under the /metrics endpoint.
 
 ## TODO
 
+* TESTST
 * Bootstrapping
 * Reload config on the fly and re-initialize then
 * create target directory for bind mounts.... package should do this.

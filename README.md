@@ -40,7 +40,7 @@ metrics, rest-like interface, return json, make client show it nicely.
     * freeze ?duration=50
     * rollback ?to=<hash> (can error); rollback also freezes, rollback isn't a permanent state.
     * unfreeze
-- get status of services, check also upstream repo
+- get status of services, check also upstream repo., hash
 
 curl essentially
 
@@ -53,24 +53,37 @@ REST interface.
 
 -ctl is basically a curl client, but make a client, simple as hell
 
-Generic options. -u user -p <passwd>
+Generic options. -u user -p <passwd> ???
+
+GETs
 
 These get json back:
 
-gitopper-ctl list machines
-gitopper-ctl list services @machine
-gitopper-ctl status <service-name> @machine  git, pull, last update??
+gitopper-ctl list|ls machines
+    /list/machines which server??
+
+gitopper-ctl list|ls @machine
+    /list/services
+gitopper-ctl iist|ls @machine <service-name>
+   /list/service/<name>
 
 These are just posts, without json reply, just HTTP status code... with json payload??
 
-gitopper-ctl freeze <service-name> [<duration>] @machine
-gitopper-ctl unfreeze <service-name> @machine
-gitopper-ctl rollback <service-name> <hash> @machine
+POSTs:
 
-## also a state?
-gitopper-ctl redo <service-name> @machine    # delete repo, and refetch - impact on service?
+gitopper-ctl freeze @machine <service-name> [<duration>]
+    /state/freeze/<name>?dur=5s
 
-TEXT OUTPUT? So not really, or json? Never know if you have everything???
+gitopper-ctl unfreeze @machine <service-name>
+    /state/unfreeze/<name>
+
+gitopper-ctl rollback @machine <service-name> <hash>
+    /state/rollback/<name>?to=<hash>
+
+gitopper-cli redo @machine <service-name>
+    /state/redo/<name>
+
+json protocol, text output from our tooling
 
 ## Authentication
 

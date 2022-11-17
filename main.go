@@ -7,7 +7,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gorilla/mux"
 	toml "github.com/pelletier/go-toml/v2"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.science.ru.nl/log"
 )
 
@@ -58,13 +60,15 @@ func main() {
 			log.Warningf("Machine %q, error checking out: %s", s1.Machine, err)
 			// continue??
 		}
-		hash, _ := gc.Hash()
-		log.Infof("Machine %q, repository in %q with %q", s1.Machine, gc.Repo(), hash)
+		log.Infof("Machine %q, repository in %q with %q", s1.Machine, gc.Repo(), gc.Hash())
 
 		// all succesfully done, do the bind mounts and start our puller
 		s1.bindmount()
 		go s1.trackUpstream(nil)
 	}
+
+	router := mux.NewRouter()
+	router.Path("/metrics").Handler(promhttp.Handler())
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)

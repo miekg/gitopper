@@ -23,10 +23,10 @@ type Service struct {
 	Mount    string // Together with Service this is the directory where the sparse git repo is checked out.
 	Dirs     []Dir  // How to map our local directories to the git repository.
 
-	Duration  time.Duration `toml:"_"` // how much to sleep between pulls
-	State     `toml:"_"`
-	m         *sync.RWMutex // protects State
-	freezeDur time.Duration // how long to freeze for, 0 is until unfreeze
+	Duration      time.Duration `toml:"_"` // how much to sleep between pulls
+	state         State
+	*sync.RWMutex               // protects State
+	freezeDur     time.Duration // how long to freeze for, 0 is until unfreeze
 }
 
 type Dir struct {
@@ -41,8 +41,29 @@ type State int
 const (
 	StateOK State = iota
 	StateFreeze
-	StateRollback
 )
+
+func (s State) String() string {
+	switch s {
+	case StateOK:
+		return "OK"
+	case StateFreeze:
+		return "FREEZE"
+	}
+	return ""
+}
+
+func (s Service) State() State {
+	s.RLock()
+	defer s.RUnlock()
+	return s.state
+}
+
+func (s Service) SetState(st State) {
+	s.Lock()
+	defer s.Unlock()
+	s.state = st
+}
 
 // merge merges anything defined in s1 into s and returns the new Service. Currently this is only
 // done for the Upstream field.
@@ -69,6 +90,14 @@ func (s Service) trackUpstream(stop chan bool) {
 	log.Infof("Launching tracking routine for %q/%q", s.Machine, s.Service)
 	for {
 		time.Sleep(s.Duration)
+
+		metricServiceHash.WithLabelValues(s.Service, gc.Hash(), s.State().String())
+
+		if s.State() == StateFreeze {
+			log.Warningf("Machine %q is service %q is frozen, not pulling", s.Machine, s.Service)
+			continue
+		}
+
 		if err := gc.Pull(); err != nil {
 			log.Warningf("Machine %q, error pulling repo %q: %s", s.Machine, s.Upstream, err)
 			// TODO: metric pull errors, pull ok, pull latency??

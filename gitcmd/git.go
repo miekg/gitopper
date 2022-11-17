@@ -103,14 +103,14 @@ func (g *Git) Diff() (bool, error) {
 	return false, nil
 }
 
-// Hash returns the git hash of HEAD in the repo in g.mount
-func (g *Git) Hash() (string, error) {
+// Hash returns the git hash of HEAD in the repo in g.mount. Empty string is returned in case of an error.
+func (g *Git) Hash() string {
 	g.cwd = g.mount
 	defer func() { g.cwd = "" }()
 
 	out, err := g.run("rev-parse", "HEAD")
 	if err != nil {
-		return "", err
+		return ""
 	}
 
 	hash := string(out)
@@ -118,7 +118,7 @@ func (g *Git) Hash() (string, error) {
 		hash = hash[:40]
 	}
 
-	return hash, nil
+	return hash
 }
 
 func (g *Git) Repo() string { return g.mount }

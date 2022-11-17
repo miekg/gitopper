@@ -86,7 +86,8 @@ func (g *Git) Pull() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return !strings.HasPrefix(string(out), "Already up to date"), nil
+	// sometimes up-to-date, or up to date
+	return !strings.HasPrefix(string(out), "Already up"), nil
 }
 
 // Hash returns the git hash of HEAD in the repo in g.mount. Empty string is returned in case of an error.

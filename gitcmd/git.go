@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"path"
 
-	"github.com/miekg/gitopper/log"
+	"go.science.ru.nl/log"
 )
 
 type Git struct {

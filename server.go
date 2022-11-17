@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/miekg/gitopper/gitcmd"
-	"github.com/miekg/gitopper/log"
+	"go.science.ru.nl/log"
 	"go.science.ru.nl/mountinfo"
 )
 

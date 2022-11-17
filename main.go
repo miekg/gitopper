@@ -5,8 +5,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/miekg/gitopper/log"
 	toml "github.com/pelletier/go-toml/v2"
+	"go.science.ru.nl/log"
 )
 
 func main() {

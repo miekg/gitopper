@@ -100,16 +100,13 @@ func (s Service) trackUpstream(stop chan bool) {
 			continue
 		}
 
-		if err := gc.Pull(); err != nil {
+		changed, err := gc.Pull()
+		if err != nil {
 			log.Warningf("Machine %q, error pulling repo %q: %s", s.Machine, s.Upstream, err)
 			// TODO: metric pull errors, pull ok, pull latency??
 			continue
 		}
 
-		changed, err := gc.Diff()
-		if err != nil {
-			log.Warningf("Machine %q, error diffing repo %q: %s", s.Machine, s.Upstream, err)
-		}
 		if !changed {
 			log.Infof("Machine %q, no diff in repo %q", s.Machine, s.Upstream)
 			continue

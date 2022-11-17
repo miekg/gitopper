@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 
 	"go.science.ru.nl/log"
 )
@@ -76,30 +77,16 @@ func (g *Git) Checkout() error {
 	return err
 }
 
-// Pull pulls from upstream.
-func (g *Git) Pull() error {
+// Pull pulls from upstream. If the returned bool is true there were updates.
+func (g *Git) Pull() (bool, error) {
 	g.cwd = g.mount
 	defer func() { g.cwd = "" }()
 
-	_, err := g.run("pull")
-	return err
-}
-
-// Diff detect if a pull has updated any files, the returned boolean is true in that case.
-func (g *Git) Diff() (bool, error) {
-	g.cwd = g.mount
-	defer func() { g.cwd = "" }()
-
-	args := []string{"diff", "HEAD", "HEAD^", "--"}
-	args = append(args, g.dirs...) // can we check multiple dirs?
-	_, err := g.run(args...)
+	out, err := g.run("pull")
 	if err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			return exitError.ExitCode() == 0, nil
-		}
+		return false, err
 	}
-
-	return false, nil
+	return !strings.HasPrefix(string(out), "Already up to date"), nil
 }
 
 // Hash returns the git hash of HEAD in the repo in g.mount. Empty string is returned in case of an error.

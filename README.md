@@ -33,6 +33,12 @@ SERVICE         HASH     STATE
 grafana-server  606eb57  OK
 ~~~
 
+## Services
+
+A service can be in 3 states: OK, FREEZE and ROLLBACK (which is a FREEZE to a previous commit).
+These state are not carried over when gitopper crashes/stops (maybe we want this to be persistent,
+would be nice to have this state in the git repo somehow?).
+
 ## Config File
 
 ~~~ toml

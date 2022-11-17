@@ -5,7 +5,7 @@ Small cli to inspect (and soon) control gitopper.
 ~~~
 ./gitopperctl list machines @<host>
 ./gitopperctl list services @<host>
-./gitopperctl list service @<host> <service>
+./gitopperctl list service  @<host> <service>
 ~~~
 
 In order:
@@ -23,3 +23,19 @@ grafana-server  606eb57  OK
 ~~~
 
 `--help` show implemented subcommands.
+
+## Manipulating Services
+
+(Not implemented yet)
+
+~~~
+./gitopperctl freeze   server @<host> <service>
+./gitopperctl unfreeze server @<host> <service>
+~~~
+
+rollback
+
+~~~
+./gitopperctl freeze   server @<host> <service>
+
+~~~

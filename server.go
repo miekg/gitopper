@@ -39,8 +39,9 @@ type Dir struct {
 type State int
 
 const (
-	StateOK State = iota
-	StateFreeze
+	StateOK       State = iota // The service is running as it should.
+	StateFreeze                // The service is locked to the current commit, no further updates are done.
+	StateRollback              // The service is rolled back and locked to that commit, no further updates are done.
 )
 
 func (s State) String() string {
@@ -49,6 +50,8 @@ func (s State) String() string {
 		return "OK"
 	case StateFreeze:
 		return "FREEZE"
+	case StateRollback:
+		return "ROLLBACK"
 	}
 	return ""
 }

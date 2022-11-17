@@ -72,6 +72,7 @@ func (s Service) merge(s1 Service, d time.Duration) Service {
 		s.Upstream = s1.Upstream
 	}
 	s.Duration = d
+	s.RWMutex = new(sync.RWMutex)
 	return s
 }
 
@@ -87,11 +88,11 @@ func (s Service) newGitCmd() *gitcmd.Git {
 // informed.
 func (s Service) trackUpstream(stop chan bool) {
 	gc := s.newGitCmd()
-	log.Infof("Launching tracking routine for %q/%q", s.Machine, s.Service)
+	log.Infof("Launched tracking routine for %q/%q", s.Machine, s.Service)
 	for {
 		time.Sleep(s.Duration)
 
-		metricServiceHash.WithLabelValues(s.Service, gc.Hash(), s.State().String())
+		metricServiceHash.WithLabelValues(s.Service, gc.Hash(), s.State().String()).Set(1)
 
 		if s.State() == StateFreeze {
 			log.Warningf("Machine %q is service %q is frozen, not pulling", s.Machine, s.Service)
@@ -147,6 +148,7 @@ func (s Service) bindmount() error {
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("failed to mount %q: %s", gitdir, err)
 		}
+		// exit code ...
 	}
 	return nil
 }

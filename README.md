@@ -20,6 +20,7 @@ mount = "/tmp"                                     # directory where to download
 machine = "grafana.atoom.net" # hostname of the machine, so it know what to do there.
 service = "grafana-server" # service identifier, if it's used by systemd it must be the systemd service name
 package = "grafana"  # as used by package mgmt, may be empty
+user = "grafana"     # chown entire repo to this username/uid
 action = "reload"    # what to do when files are changed, maybe empty.
 mount = "/tmp/grafana1" # where to download the repo - we don't care
 dirs = [
@@ -102,6 +103,4 @@ gitopper_service_failure_count{} 1.0
 ## TODO
 
 * Use https://cli.urfave.org/v2/getting-started/ for command cli handling
-* Use gorilla mux to do the webserving side
 * Write client - to check webserving side.
-* Metrics

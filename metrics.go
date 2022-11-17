@@ -10,25 +10,29 @@ const namespace = "gitopper"
 var (
 	metricMachineInfo = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace,
-		Subsystem: "machine_info",
+		Subsystem: "machine",
+		Name:      "info",
 		Help:      "Info on the machine",
 	}, []string{"machine"})
 
-	metricServiceHash = promauto.NewCounterVec(prometheus.CounterOpts{
+	metricServiceHash = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
-		Subsystem: "service_info",
+		Subsystem: "service",
+		Name:      "info",
 		Help:      "Current hash value for this service",
 	}, []string{"service", "hash", "state"})
 
 	metricServiceFrozen = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
-		Subsystem: "service_frozen_count_total",
+		Subsystem: "service",
+		Name:      "frozen_count_total",
 		Help:      "Total number of frozen services",
 	})
 
 	metricServiceOk = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: namespace,
-		Subsystem: "service_ok_count_total",
+		Subsystem: "service",
+		Name:      "ok_count_total",
 		Help:      "Total number of normal running services",
 	})
 )

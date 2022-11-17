@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,6 +17,7 @@ import (
 var (
 	flagConfig   = flag.String("c", "", "config file to read")
 	flagDuration = flag.String("d", "30s", "default duration to sleep before pulling")
+	flagAddr     = flag.String("a", ":8000", "address to listen on")
 )
 
 func main() {
@@ -69,6 +71,13 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Path("/metrics").Handler(promhttp.Handler())
+
+	go func() {
+		if err := http.ListenAndServe(*flagAddr, router); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	log.Infof("Launched server on port %s", *flagAddr)
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)

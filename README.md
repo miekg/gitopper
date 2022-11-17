@@ -53,14 +53,21 @@ REST interface.
 
 -ctl is basically a curl client, but make a client, simple as hell
 
+Generic options. -u user -p <passwd>
+
+These get json back:
+
 gitopper-ctl list machines
 gitopper-ctl list services @machine
-
 gitopper-ctl status <service-name> @machine  git, pull, last update??
+
+These are just posts, without json reply, just HTTP status code... with json payload??
 
 gitopper-ctl freeze <service-name> [<duration>] @machine
 gitopper-ctl unfreeze <service-name> @machine
 gitopper-ctl rollback <service-name> <hash> @machine
+
+## also a state?
 gitopper-ctl redo <service-name> @machine    # delete repo, and refetch - impact on service?
 
 TEXT OUTPUT? So not really, or json? Never know if you have everything???
@@ -78,3 +85,10 @@ gitopper_service_frozen{service="..."} 1.0
 gitopper_service_ok{service="..."} 1.0
 gitopper_service_failure_count{} 1.0
 ~~~
+
+## TODO
+
+* Use https://cli.urfave.org/v2/getting-started/ for command cli handling
+* Use gorilla mux to do the webserving side
+* Write client - to check webserving side.
+* Metrics

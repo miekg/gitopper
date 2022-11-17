@@ -14,13 +14,13 @@ it will actually need.
 ~~~ toml
 [global]
 upstream = "https://github.com/miekg/blah-origin"  # repository where to download from
-mount = "/tmp"                                # directory where to download to, mount+service is used as path
+mount = "/tmp"                                     # directory where to download to, mount+service is used as path
 
 [[services]]
 machine = "grafana.atoom.net" # hostname of the machine, so it know what to do there.
-service = "grafana-server" # as used in systemd
-package = "grafana"  # as used by package mgmt
-action = "reload"    # what to do when files are changed
+service = "grafana-server" # service identifier, if it's used by systemd it must be the systemd service name
+package = "grafana"  # as used by package mgmt, may be empty
+action = "reload"    # what to do when files are changed, maybe empty.
 mount = "/tmp/grafana1" # where to download the repo - we don't care
 dirs = [
     { local = "/etc/grafana", link = "grafana/etc", single = false },

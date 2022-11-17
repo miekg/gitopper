@@ -23,9 +23,10 @@ type Service struct {
 	Mount    string // Together with Service this is the directory where the sparse git repo is checked out.
 	Dirs     []Dir  // How to map our local directories to the git repository.
 
-	State
+	Duration  time.Duration `toml:"_"` // how much to sleep between pulls
+	State     `toml:"_"`
 	m         *sync.RWMutex // protects State
-	freezeDur time.Duration // how long to freeze for, time.Zero is until unfreeze
+	freezeDur time.Duration // how long to freeze for, 0 is until unfreeze
 }
 
 type Dir struct {
@@ -45,10 +46,11 @@ const (
 
 // merge merges anything defined in s1 into s and returns the new Service. Currently this is only
 // done for the Upstream field.
-func (s Service) merge(s1 Service) Service {
+func (s Service) merge(s1 Service, d time.Duration) Service {
 	if s1.Upstream != "" {
 		s.Upstream = s1.Upstream
 	}
+	s.Duration = d
 	return s
 }
 
@@ -66,7 +68,7 @@ func (s Service) trackUpstream(stop chan bool) {
 	gc := s.newGitCmd()
 	log.Infof("Launching tracking routine for %q/%q", s.Machine, s.Service)
 	for {
-		time.Sleep(30 * time.Second) // track in service?
+		time.Sleep(s.Duration)
 		if err := gc.Pull(); err != nil {
 			log.Warningf("Machine %q, error pulling repo %q: %s", s.Machine, s.Upstream, err)
 			// TODO: metric pull errors, pull ok, pull latency??
@@ -91,6 +93,9 @@ func (s Service) trackUpstream(stop chan bool) {
 }
 
 func (s Service) systemctl() error {
+	if s.Action == "" {
+		return nil
+	}
 	ctx := context.TODO()
 	cmd := exec.CommandContext(ctx, "systemctl", s.Action, s.Service)
 	fmt.Printf("%+v\n", cmd)

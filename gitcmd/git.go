@@ -38,6 +38,7 @@ func (g *Git) run(args ...string) ([]byte, error) {
 	ctx := context.TODO()
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = g.cwd
+	cmd.Env = []string{"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null"}
 	if g.user != "" {
 		uid, gid := osutil.User(g.user)
 		cmd.SysProcAttr = &syscall.SysProcAttr{}

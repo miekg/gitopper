@@ -5,10 +5,8 @@ Watch a remote git repo, pull changes and HUP the service process. For a design 
 
 A sparse (but with full history) git checkout will be done, so each service will only see the files
 it will actually need. Several bind mounts are then setup to give the service access to the file in
-Git.
-
-If the target directories for the bind mounts don't exist they will not (yet) be created. This is
-now also a fatal error.
+Git. If the target directories don't exist, they will be created, with the current user - if
+specified.
 
 ## Quickstart
 

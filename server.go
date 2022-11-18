@@ -153,7 +153,7 @@ func (s *Service) trackUpstream(stop chan bool) {
 				continue
 			}
 			log.Warningf("Machine %q, successfully rollback repo %q to %s", s.Machine, s.Upstream, info)
-			s.SetState(StateFreeze, "Rolled back to: "+info)
+			s.SetState(StateFreeze, "ROLLBACK: "+info)
 			continue
 		}
 

@@ -38,13 +38,13 @@ var (
 
 	metricGitFail = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace,
-		Subsystem: "service",
+		Subsystem: "machine",
 		Name:      "git_error_total",
 	}, []string{"service"})
 
 	metricGitOps = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace,
-		Subsystem: "service",
+		Subsystem: "machine",
 		Name:      "git_ops_total",
 	}, []string{"service"})
 )

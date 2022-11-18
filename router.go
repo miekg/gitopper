@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/miekg/gitopper/proto"
@@ -66,7 +67,7 @@ func ListServices(c Config, w http.ResponseWriter, r *http.Request) {
 			Hash:        service.Hash(),
 			State:       state.String(),
 			StateInfo:   info,
-			StateChange: service.Change().String(),
+			StateChange: service.Change().Format(time.RFC1123),
 		}
 	}
 	data, err := json.Marshal(ls)

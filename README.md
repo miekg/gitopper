@@ -45,7 +45,7 @@ would be nice to have this state in the git repo somehow?).
 * `FREEZE`: everything is running, but we're not tracking upstream.
 * `ROLLBACK`: everything is running, but we're not tracking upstream *and* we're pinned to an older
   commit.
-* `BROKEN`: something is broken, we're still tracking upstream.
+* `BROKEN`: something with the service is broken, we're still tracking upstream.
 
 
 State transitions:

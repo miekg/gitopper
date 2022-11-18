@@ -112,6 +112,14 @@ func (g *Git) Hash() string {
 	return strings.TrimSpace(string(out))
 }
 
+// Rollback checks out commit <hash>, and return nil if no errors are encountered.
+func (g *Git) Rollback(hash string) error {
+	g.cwd = g.mount
+	defer func() { g.cwd = "" }()
+	_, err := g.run("checkout", hash)
+	return err
+}
+
 func (g *Git) Repo() string { return g.mount }
 
 func userLookup(u string) (int64, int64) {

@@ -48,7 +48,7 @@ would be nice to have this state in the git repo somehow?).
   BROKEN.
 * `BROKEN`: something with the service is broken, we're still tracking upstream.
 
-Maybe also a NOT-RUNNING? should that be monitoring???
+Maybe also a NOT-RUNNING? Or should that be monitoring???
 
 State transitions:
 
@@ -98,7 +98,7 @@ The following metrics are exported:
 * gitopper_machine_git_error_total - total number of errors when running git.
 * gitopper_machine_git_ops_total - total number of git runs.
 
-Metircs are available under the /metrics endpoint.
+Metrics are available under the /metrics endpoint.
 
 ## Client
 

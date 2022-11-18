@@ -18,19 +18,19 @@ now also a fatal error.
 - Compile the gitopper binary: `go build`
 - Start as root: `sudo ./gitopper -c config`
 
-And things should work then. I.e. in /etc/grafana you should see the contant of the
+And things should work then. I.e. in /etc/grafana you should see the content of the
 *miekg/blah-origin* repository.
 
 The checked out git repo in /tmp/grafana1/grafana-server should _only_ contain the grafana directory
 thanks to the sparse checkout. Changes made to the `crap` subdir in that repo do not trigger a
-grafana restart (not even sure grafana actually needs this).
+grafana restart (not even sure grafana actually needs a restart).
 
 Then with cmd/gitopperctl/gitopperctl you can query the server a bit:
 
 ~~~
-% ./gitopperctl list service @localhost grafana-server
-SERVICE         HASH     STATE  INFO CHANGE
-grafana-server  606eb57  OK
+% ./gitopperctl list services @localhost
+#  SERVICE         HASH     STATE  INFO  CHANGED
+0  grafana-server  606eb57  OK           Fri, 18 Nov 2022 09:14:52 UTC
 ~~~
 
 ## Services
@@ -46,7 +46,6 @@ would be nice to have this state in the git repo somehow?).
 * `ROLLBACK`: everything is running, but we're not tracking upstream *and* we're pinned to an older
   commit.
 * `BROKEN`: something with the service is broken, we're still tracking upstream.
-
 
 State transitions:
 

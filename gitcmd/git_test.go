@@ -1,6 +1,7 @@
 package gitcmd
 
 import (
+	"encoding/hex"
 	"testing"
 )
 
@@ -11,7 +12,13 @@ func TestHash(t *testing.T) {
 	if hash == "" {
 		t.Fatal("Failed to get hash")
 	}
-	// hex.DecodeString will fails because the hash is shortened.
+	if len(hash) != 40 {
+		t.Fatalf("Hash length should be 40, got %d", len(hash))
+	}
+
+	if _, err := hex.DecodeString(hash); err != nil {
+		t.Fatalf("Failed to decode hash: %s", err)
+	}
 }
 
 func TestDiffStatOK(t *testing.T) {

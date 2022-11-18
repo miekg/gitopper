@@ -26,12 +26,14 @@ grafana-server  606eb57  OK
 
 ## Manipulating Services
 
+Freezing (make it stop updating to the latest commit), until a unfreeze:
+
 ~~~
 ./gitopperctl freeze   service @<host> <service>
 ./gitopperctl unfreeze service @<host> <service>
 ~~~
 
-rollback
+Rolling back to a previous commit, hash needs to be full length:
 
 ~~~
 ./gitopperctl rollback service @<host> <service> <hash>

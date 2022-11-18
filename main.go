@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,27 +16,24 @@ import (
 var flagHosts sliceFlag
 
 var (
-	flagConfig   = flag.String("c", "", "config file to read")
-	flagDuration = flag.String("d", "30s", "default duration to sleep before pulling")
-	flagAddr     = flag.String("a", ":8000", "address to listen on")
+	flagConfig = flag.String("c", "", "config file to read")
+	flagAddr   = flag.String("a", ":8000", "address to listen on")
+	flagDebug  = flag.Bool("d", false, "enable debug logging")
 )
 
 func main() {
 	flag.Var(&flagHosts, "h", "hosts to impersonate, can be given multiple times, $HOSTNAME is included by default")
 	(&flagHosts).Set(os.Getenv("HOSTNAME"))
+	duration := 30 * time.Second
 	flag.Parse()
+
+	if *flagDebug {
+		log.D.Set()
+	}
 
 	if *flagConfig == "" {
 		log.Fatalf("-c flag is mandatory")
 	}
-	duration, err := time.ParseDuration(*flagDuration)
-	if err != nil {
-		log.Fatalf("invalid -d value: %s", err)
-	}
-	if duration < 5*time.Second {
-		log.Fatal("invalid -d value (<5s)")
-	}
-
 	doc, err := os.ReadFile(*flagConfig)
 	if err != nil {
 		log.Fatal(err)
@@ -63,16 +61,18 @@ func main() {
 		// Initial checkout - if needed.
 		err := gc.Checkout()
 		if err != nil {
-			log.Warningf("Machine %q, error checking out: %s", s1.Machine, err)
-			// state change broken
-			// continue?? - yes continue
+			log.Warningf("Machine %q, error pulling repo %q: %s", s.Machine, s.Upstream, err)
+			s1.SetState(StateBroken, fmt.Sprintf("error pulling %q: %s", s.Upstream, err))
+			continue
 		}
+
 		log.Infof("Machine %q, repository in %q with %q", s1.Machine, gc.Repo(), gc.Hash())
 
 		// all succesfully done, do the bind mounts and start our puller
 		if err := s1.bindmount(); err != nil {
-			// state change
-			log.Fatalf("Can not setup bind mounts: %s", err)
+			log.Warningf("Machine %q, error setting up bind mounts for %q: %s", s.Machine, s.Upstream, err)
+			s1.SetState(StateBroken, fmt.Sprintf("error setting up bind mounts repo %q: %s", s.Upstream, err))
+			continue
 		}
 		serviceCnt++
 		go s1.trackUpstream(nil) // TODO: stop goroutines, could also use context.

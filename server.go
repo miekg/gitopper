@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"path"
 	"sync"
 	"time"
 
 	"github.com/miekg/gitopper/gitcmd"
+	"github.com/miekg/gitopper/osutil"
 	"go.science.ru.nl/log"
 	"go.science.ru.nl/mountinfo"
 )
@@ -127,13 +129,32 @@ func (s *Service) newGitCmd() *gitcmd.Git {
 func (s *Service) trackUpstream(stop chan bool) {
 	gc := s.newGitCmd()
 
-	s.SetHash(gc.Hash())
-	state, _ := s.State()
-	metricServiceHash.WithLabelValues(s.Service, s.Hash(), state.String()).Set(1)
 	log.Infof("Launched tracking routine for %q/%q", s.Machine, s.Service)
 
 	for {
+		s.SetHash(gc.Hash())
+		state, info := s.State()
+		metricServiceHash.WithLabelValues(s.Service, s.Hash(), state.String()).Set(1)
+
 		time.Sleep(s.Duration)
+
+		// this in now only done once... because we set state to broken... Should we keep trying??
+		if state == StateRollback && info != s.hash {
+			if err := gc.Rollback(info); err != nil {
+				log.Warningf("Machine %q, error rollback repo %q to %q: %s", s.Machine, s.Upstream, info, err)
+				s.SetState(StateBroken, fmt.Sprintf("error rolling back %q to %q: %s", s.Upstream, info, err))
+				continue
+			}
+
+			if err := s.systemctl(); err != nil {
+				log.Warningf("Machine %q, error running systemctl: %s", s.Machine, err)
+				s.SetState(StateBroken, fmt.Sprintf("error running systemctl %q: %s", s.Upstream, err))
+				continue
+			}
+			log.Warningf("Machine %q, successfully rollback repo %q to %s", s.Machine, s.Upstream, info)
+			s.SetState(StateFreeze, "Rolled back to: "+info)
+			continue
+		}
 
 		if state, _ := s.State(); state == StateFreeze || state == StateRollback {
 			log.Warningf("Machine %q is service %q is %s, not pulling", s.Machine, s.Service, state)
@@ -143,7 +164,7 @@ func (s *Service) trackUpstream(stop chan bool) {
 		changed, err := gc.Pull()
 		if err != nil {
 			log.Warningf("Machine %q, error pulling repo %q: %s", s.Machine, s.Upstream, err)
-			// TODO: metric pull errors, pull ok, pull latency??
+			s.SetState(StateBroken, fmt.Sprintf("error pulling %q: %s", s.Upstream, err))
 			continue
 		}
 
@@ -153,12 +174,14 @@ func (s *Service) trackUpstream(stop chan bool) {
 		}
 
 		s.SetHash(gc.Hash())
-		state, _ := s.State()
+		state, _ = s.State()
 		metricServiceHash.WithLabelValues(s.Service, s.Hash(), state.String()).Set(1)
 
 		log.Infof("Machine %q, diff in repo %q, pinging service: %s", s.Machine, s.Upstream, s.Service)
 		if err := s.systemctl(); err != nil {
-			log.Warningf("Machine %q, error running systemcl: %s", s.Machine, err)
+			log.Warningf("Machine %q, error running systemctl: %s", s.Machine, err)
+			s.SetState(StateBroken, fmt.Sprintf("error running systemctl %q: %s", s.Upstream, err))
+			continue
 		}
 	}
 }
@@ -177,6 +200,19 @@ func (s *Service) bindmount() error {
 	for _, d := range s.Dirs {
 		gitdir := path.Join(s.Mount, s.Service)
 		gitdir = path.Join(gitdir, d.Link)
+
+		if !exists(d.Local) {
+			if err := os.MkdirAll(d.Local, 0775); err != nil {
+				log.Errorf("Directory %q can not be created", d.Local)
+				return fmt.Errorf("failed to create directory %q: %s", d.Local, err)
+			}
+			// set base to correct owner
+			uid, gid := osutil.User(s.User)
+			if err := os.Chown(path.Base(d.Local), int(uid), int(gid)); err != nil {
+				log.Errorf("Directory %q can not be chown to %q: %s", d.Local, s.User, err)
+				return fmt.Errorf("failed to chown directory %q to %q: %s", d.Local, s.User, err)
+			}
+		}
 
 		if ok, err := mountinfo.Mounted(d.Local); err == nil && ok {
 			log.Infof("Directory %q is already mounted", d.Local)
@@ -197,4 +233,9 @@ func (s *Service) bindmount() error {
 		}
 	}
 	return nil
+}
+
+func exists(p string) bool {
+	_, err := os.Stat(p)
+	return err == nil
 }

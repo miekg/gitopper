@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -122,6 +123,11 @@ func FreezeService(c Config, state State, w http.ResponseWriter, r *http.Request
 
 func RollbackService(c Config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	if _, err := hex.DecodeString(vars["hash"]); err != nil {
+		http.Error(w, http.StatusText(http.StatusNotAcceptable)+", not a valid git hash: "+vars["hash"], http.StatusNotFound)
+		return
+	}
+
 	for _, service := range c.Services {
 		if service.Service == vars["service"] {
 			service.SetState(StateRollback, vars["hash"])

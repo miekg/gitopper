@@ -44,8 +44,11 @@ would be nice to have this state in the git repo somehow?).
 * `OK`: everything is running and we're tracking upstream.
 * `FREEZE`: everything is running, but we're not tracking upstream.
 * `ROLLBACK`: everything is running, but we're not tracking upstream *and* we're pinned to an older
-  commit.
+  commit. This state is quickly followed by FREEZE if we were successful rolling back, otherwise
+  BROKEN.
 * `BROKEN`: something with the service is broken, we're still tracking upstream.
+
+Maybe also a NOT-RUNNING? should that be monitoring???
 
 State transitions:
 
@@ -121,11 +124,10 @@ Some are implemented under the /metrics endpoint.
 
 ## TODO
 
+* Move orign/main to config
+* Move pull duration to config (but set minimum)
+* SetState sets metric?
+* check metrics
 * TESTS
 * Bootstrapping
 * Reload config on the fly and re-initialize
-* create target directory for bind mounts.... we should do this (correct user??)
-* rollback
-* set BROKEN
-* check metrics
-* query all machines, run a script

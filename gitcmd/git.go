@@ -6,12 +6,11 @@ import (
 	"context"
 	"os"
 	"os/exec"
-	"os/user"
 	"path"
-	"strconv"
 	"strings"
 	"syscall"
 
+	"github.com/miekg/gitopper/osutil"
 	"go.science.ru.nl/log"
 )
 
@@ -40,7 +39,7 @@ func (g *Git) run(args ...string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = g.cwd
 	if g.user != "" {
-		uid, gid := userLookup(g.user)
+		uid, gid := osutil.User(g.user)
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 		cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
 	}
@@ -93,7 +92,7 @@ func (g *Git) Pull() (bool, error) {
 	g.cwd = g.mount
 	defer func() { g.cwd = "" }()
 
-	out, err := g.run("pull", "--stat")
+	out, err := g.run("pull", "--stat", "origin", "main") // TODO: move to config???
 	if err != nil {
 		return false, err
 	}
@@ -105,7 +104,7 @@ func (g *Git) Hash() string {
 	g.cwd = g.mount
 	defer func() { g.cwd = "" }()
 
-	out, err := g.run("rev-parse", "--short", "HEAD")
+	out, err := g.run("rev-parse", "HEAD")
 	if err != nil {
 		return ""
 	}
@@ -121,13 +120,3 @@ func (g *Git) Rollback(hash string) error {
 }
 
 func (g *Git) Repo() string { return g.mount }
-
-func userLookup(u string) (int64, int64) {
-	u1, err := user.Lookup(u)
-	if err != nil {
-		return 0, 0
-	}
-	uid, _ := strconv.ParseInt(u1.Uid, 10, 32)
-	gid, _ := strconv.ParseInt(u1.Gid, 10, 32)
-	return uid, gid
-}

@@ -96,7 +96,7 @@ func main() {
 							if err := json.Unmarshal(body, &ls); err != nil {
 								return err
 							}
-							tbl := table.New("#", "SERVICE", "HASH", "STATE", "INFO", "CHANGED")
+							tbl := table.New("#", "SERVICE", "HASH", "STATE", "INFO", "SINCE")
 							for i, ls := range ls.ListServices {
 								tbl.AddRow(i, ls.Service, ls.Hash, ls.State, ls.StateInfo, timeIsZero(ls.StateChange))
 							}
@@ -125,7 +125,7 @@ func main() {
 							if err := json.Unmarshal(body, &ls); err != nil {
 								return err
 							}
-							tbl := table.New("SERVICE", "HASH", "STATE", "INFO", "CHANGED")
+							tbl := table.New("SERVICE", "HASH", "STATE", "INFO", "SINCE")
 							tbl.AddRow(ls.Service, ls.Hash, ls.State, ls.StateInfo, timeIsZero(ls.StateChange))
 							tbl.Print()
 							return nil
@@ -205,6 +205,7 @@ func main() {
 
 // If the string s is a IsZero() time, we return N/A as we don't know when the last state change was.
 func timeIsZero(s string) string {
+	return s
 	t, err := time.Parse(time.RFC1123, s)
 	if err != nil {
 		return "N/A"

@@ -96,9 +96,9 @@ func main() {
 							if err := json.Unmarshal(body, &ls); err != nil {
 								return err
 							}
-							tbl := table.New("#", "SERVICE", "HASH", "STATE")
+							tbl := table.New("#", "SERVICE", "HASH", "STATE", "INFO", "CHANGED")
 							for i, ls := range ls.ListServices {
-								tbl.AddRow(i, ls.Service, ls.Hash, ls.State)
+								tbl.AddRow(i, ls.Service, ls.Hash, ls.State, ls.StateInfo, ls.StateChange)
 							}
 							tbl.Print()
 							return nil
@@ -125,8 +125,8 @@ func main() {
 							if err := json.Unmarshal(body, &ls); err != nil {
 								return err
 							}
-							tbl := table.New("SERVICE", "HASH", "STATE")
-							tbl.AddRow(ls.Service, ls.Hash, ls.State)
+							tbl := table.New("SERVICE", "HASH", "STATE", "INFO", "CHANGED")
+							tbl.AddRow(ls.Service, ls.Hash, ls.State, ls.StateInfo, ls.StateChange)
 							tbl.Print()
 							return nil
 						},
@@ -140,7 +140,7 @@ func main() {
 				Subcommands: []*cli.Command{
 					{
 						Name:    "freeze",
-						Aliases: []string{"m"},
+						Aliases: []string{"f"},
 						Usage:   "state freeze @machine <service>",
 						Action: func(ctx *cli.Context) error {
 							at, err := atMachine(ctx)
@@ -156,8 +156,9 @@ func main() {
 						},
 					},
 					{
-						Name:  "unfreeze",
-						Usage: "state unfreeze @machine <service>",
+						Name:    "unfreeze",
+						Aliases: []string{"u"},
+						Usage:   "state unfreeze @machine <service>",
 						Action: func(ctx *cli.Context) error {
 							at, err := atMachine(ctx)
 							if err != nil {
@@ -168,6 +169,27 @@ func main() {
 								return fmt.Errorf("need service")
 							}
 							_, err = query(at, "POST", "state", "unfreeze", service)
+							return err
+						},
+					},
+					{
+						Name:    "rollback",
+						Aliases: []string{"r"},
+						Usage:   "state rollback @machine <service> <hash>",
+						Action: func(ctx *cli.Context) error {
+							at, err := atMachine(ctx)
+							if err != nil {
+								return err
+							}
+							service := ctx.Args().Get(1)
+							if service == "" {
+								return fmt.Errorf("need service")
+							}
+							hash := ctx.Args().Get(2)
+							if hash == "" {
+								return fmt.Errorf("need hash to rollback to")
+							}
+							_, err = query(at, "POST", "state", "rollback", service, hash)
 							return err
 						},
 					},

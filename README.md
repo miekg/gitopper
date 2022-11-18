@@ -29,15 +29,27 @@ Then with cmd/gitopperctl/gitopperctl you can query the server a bit:
 
 ~~~
 % ./gitopperctl list service @localhost grafana-server
-SERVICE         HASH     STATE
+SERVICE         HASH     STATE  INFO CHANGE
 grafana-server  606eb57  OK
 ~~~
 
 ## Services
 
-A service can be in 3 states: OK, FREEZE and ROLLBACK (which is a FREEZE to a previous commit).
+A service can be in 4 states: OK, FREEZE, ROLLBACK (which is a FREEZE to a previous commit) and
+BROKEN.
+
 These state are not carried over when gitopper crashes/stops (maybe we want this to be persistent,
 would be nice to have this state in the git repo somehow?).
+
+* `OK`: everything is running and we're tracking upstream.
+* `FREEZE`: everything is running, but we're not tracking upstream.
+* `ROLLBACK`: everything is running, but we're not tracking upstream *and* we're pinned to an older
+  commit.
+* `BROKEN`: something is broken, we're still tracking upstream.
+
+
+State transitions:
+
 
 ## Config File
 

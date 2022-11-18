@@ -32,8 +32,8 @@ func newRouter(c Config) *mux.Router {
 	router.Path("/state/unfreeze/{service}").Methods("POST").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		FreezeService(c, StateOK, w, r)
 	})
-	router.Path("/state/rollback/{service}").Methods("POST").Queries("hash", "{hash:[a-fA-F0-9]+}").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// RollbackService(c, w, r)
+	router.Path("/state/rollback/{service}/{hash}").Methods("POST").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		RollbackService(c, w, r)
 	})
 	return router
 }
@@ -60,10 +60,13 @@ func ListServices(c Config, w http.ResponseWriter, r *http.Request) {
 		ListServices: make([]proto.ListService, len(c.Services)),
 	}
 	for i, service := range c.Services {
+		state, info := service.State()
 		ls.ListServices[i] = proto.ListService{
-			Service: service.Service,
-			Hash:    service.Hash(),
-			State:   service.State().String(),
+			Service:     service.Service,
+			Hash:        service.Hash(),
+			State:       state.String(),
+			StateInfo:   info,
+			StateChange: service.Change().String(),
 		}
 	}
 	data, err := json.Marshal(ls)
@@ -80,10 +83,13 @@ func ListService(c Config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	for _, service := range c.Services {
 		if service.Service == vars["service"] {
+			state, info := service.State()
 			ls := proto.ListService{
-				Service: service.Service,
-				Hash:    service.Hash(),
-				State:   service.State().String(),
+				Service:     service.Service,
+				Hash:        service.Hash(),
+				State:       state.String(),
+				StateInfo:   info,
+				StateChange: service.Change().String(),
 			}
 			data, err := json.Marshal(ls)
 			if err != nil {
@@ -103,8 +109,21 @@ func FreezeService(c Config, state State, w http.ResponseWriter, r *http.Request
 	vars := mux.Vars(r)
 	for _, service := range c.Services {
 		if service.Service == vars["service"] {
-			service.SetState(state)
+			service.SetState(state, "")
 			log.Infof("Machine %q, service %q set to %s", service.Machine, service.Service, state)
+			http.Error(w, http.StatusText(http.StatusOK), http.StatusOK)
+			return
+		}
+	}
+	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+}
+
+func RollbackService(c Config, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	for _, service := range c.Services {
+		if service.Service == vars["service"] {
+			service.SetState(StateRollback, vars["hash"])
+			log.Infof("Machine %q, service %q set to %s", service.Machine, service.Service, StateRollback)
 			http.Error(w, http.StatusText(http.StatusOK), http.StatusOK)
 			return
 		}

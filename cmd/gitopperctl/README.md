@@ -26,16 +26,13 @@ grafana-server  606eb57  OK
 
 ## Manipulating Services
 
-(Not implemented yet)
-
 ~~~
-./gitopperctl freeze   server @<host> <service>
-./gitopperctl unfreeze server @<host> <service>
+./gitopperctl freeze   service @<host> <service>
+./gitopperctl unfreeze service @<host> <service>
 ~~~
 
 rollback
 
 ~~~
-./gitopperctl freeze   server @<host> <service>
-
+./gitopperctl rollback service @<host> <service> <hash>
 ~~~

@@ -56,12 +56,14 @@ func main() {
 		err := gc.Checkout()
 		if err != nil {
 			log.Warningf("Machine %q, error checking out: %s", s1.Machine, err)
-			// continue??
+			// state change broken
+			// continue?? - yes continue
 		}
 		log.Infof("Machine %q, repository in %q with %q", s1.Machine, gc.Repo(), gc.Hash())
 
 		// all succesfully done, do the bind mounts and start our puller
 		if err := s1.bindmount(); err != nil {
+			// state change
 			log.Fatalf("Can not setup bind mounts: %s", err)
 		}
 		go s1.trackUpstream(nil) // TODO: stop goroutines, could also use context.

@@ -60,10 +60,9 @@ func ListServices(c Config, w http.ResponseWriter, r *http.Request) {
 		ListServices: make([]proto.ListService, len(c.Services)),
 	}
 	for i, service := range c.Services {
-		gc := service.newGitCmd() // TODO: also in state, as to minimize forks.
 		ls.ListServices[i] = proto.ListService{
 			Service: service.Service,
-			Hash:    gc.Hash(),
+			Hash:    service.Hash(),
 			State:   service.State().String(),
 		}
 	}
@@ -81,10 +80,9 @@ func ListService(c Config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	for _, service := range c.Services {
 		if service.Service == vars["service"] {
-			gc := service.newGitCmd() // TODO: also in state, as to minimize forks.
 			ls := proto.ListService{
 				Service: service.Service,
-				Hash:    gc.Hash(),
+				Hash:    service.Hash(),
 				State:   service.State().String(),
 			}
 			data, err := json.Marshal(ls)

@@ -11,8 +11,9 @@ type (
 	}
 
 	ListService struct {
-		Service string `json:"service"`
-		Hash    string `json:"hash"`
-		State   string `json:"state"`
+		Service   string `json:"service"`
+		Hash      string `json:"hash"`
+		State     string `json:"state"`
+		StateInfo string `json:"stateinfo"`
 	}
 )

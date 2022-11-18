@@ -26,8 +26,10 @@ type Service struct {
 
 	Duration     time.Duration `toml:"_"` // how much to sleep between pulls
 	state        State
-	sync.RWMutex               // protects State
-	freezeDur    time.Duration // how long to freeze for, 0 is until unfreeze
+	stateInfo    string        // extra info some states carry
+	hash         string        // git hash of the current git checkout
+	sync.RWMutex               // protects State and friends
+	freezeDur    time.Duration // how long to freeze for, 0 is until unfreeze (TODO: unused)
 }
 
 type Dir struct {
@@ -42,6 +44,7 @@ const (
 	StateOK       State = iota // The service is running as it should.
 	StateFreeze                // The service is locked to the current commit, no further updates are done.
 	StateRollback              // The service is rolled back and locked to that commit, no further updates are done.
+	StateBroken                // The service is broken, i.e. didn't start, systemctl error, etc.
 )
 
 func (s State) String() string {
@@ -52,6 +55,8 @@ func (s State) String() string {
 		return "FREEZE"
 	case StateRollback:
 		return "ROLLBACK"
+	case StateBroken:
+		return "BROKEN"
 	}
 	return ""
 }
@@ -66,6 +71,18 @@ func (s *Service) SetState(st State) {
 	s.Lock()
 	defer s.Unlock()
 	s.state = st
+}
+
+func (s *Service) Hash() string {
+	s.RLock()
+	defer s.RUnlock()
+	return s.hash
+}
+
+func (s *Service) SetHash(h string) {
+	s.Lock()
+	defer s.Unlock()
+	s.hash = h
 }
 
 // merge merges anything defined in s1 into s and returns the new Service. Currently this is only
@@ -90,12 +107,13 @@ func (s *Service) newGitCmd() *gitcmd.Git {
 // informed.
 func (s *Service) trackUpstream(stop chan bool) {
 	gc := s.newGitCmd()
+
+	s.SetHash(gc.Hash())
+	metricServiceHash.WithLabelValues(s.Service, s.Hash(), s.State().String()).Set(1)
 	log.Infof("Launched tracking routine for %q/%q", s.Machine, s.Service)
-	metricServiceHash.WithLabelValues(s.Service, gc.Hash(), s.State().String()).Set(1)
+
 	for {
 		time.Sleep(s.Duration)
-
-		metricServiceHash.WithLabelValues(s.Service, gc.Hash(), s.State().String()).Set(1)
 
 		if state := s.State(); state == StateFreeze || state == StateRollback {
 			log.Warningf("Machine %q is service %q is %s, not pulling", s.Machine, s.Service, state)
@@ -113,6 +131,9 @@ func (s *Service) trackUpstream(stop chan bool) {
 			log.Infof("Machine %q, no diff in repo %q", s.Machine, s.Upstream)
 			continue
 		}
+
+		s.SetHash(gc.Hash())
+		metricServiceHash.WithLabelValues(s.Service, s.Hash(), s.State().String()).Set(1)
 
 		log.Infof("Machine %q, diff in repo %q, pinging service: %s", s.Machine, s.Upstream, s.Service)
 		if err := s.systemctl(); err != nil {

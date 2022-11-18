@@ -104,6 +104,16 @@ func (s *Service) merge(s1 *Service, d time.Duration) *Service {
 	return s
 }
 
+// forMe compares the hostnames with the service machine name, it there is a match for service is for us.
+func (s *Service) forMe(hostnames []string) bool {
+	for _, h := range hostnames {
+		if h == s.Machine {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Service) newGitCmd() *gitcmd.Git {
 	dirs := []string{}
 	for _, d := range s.Dirs {

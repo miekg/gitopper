@@ -127,3 +127,7 @@ Some are implemented under the /metrics endpoint.
 * Reload config on the fly and re-initialize
 * create target directory for bind mounts.... we should do this (correct user??)
 * add: -h options, multiple hostnames, for testing and other purposes.
+* rollback
+* set BROKEN
+* check metrics
+* query all machines?

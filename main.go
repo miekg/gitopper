@@ -12,6 +12,8 @@ import (
 	"go.science.ru.nl/log"
 )
 
+var flagHosts sliceFlag
+
 var (
 	flagConfig   = flag.String("c", "", "config file to read")
 	flagDuration = flag.String("d", "30s", "default duration to sleep before pulling")
@@ -19,6 +21,8 @@ var (
 )
 
 func main() {
+	flag.Var(&flagHosts, "h", "hosts to impersonate, can be given multiple times, $HOSTNAME is included by default")
+	(&flagHosts).Set(os.Getenv("HOSTNAME"))
 	flag.Parse()
 
 	if *flagConfig == "" {
@@ -46,9 +50,13 @@ func main() {
 		log.Fatalf("The configuration is not valid: %s", err)
 	}
 
+	serviceCnt := 0
 	for _, s := range c.Services {
-		s1 := s.merge(c.Global, duration)
+		if !s.forMe(flagHosts) {
+			continue
+		}
 
+		s1 := s.merge(c.Global, duration)
 		log.Infof("Machine %q %q", s1.Machine, s1.Upstream)
 		gc := s1.newGitCmd()
 
@@ -66,6 +74,7 @@ func main() {
 			// state change
 			log.Fatalf("Can not setup bind mounts: %s", err)
 		}
+		serviceCnt++
 		go s1.trackUpstream(nil) // TODO: stop goroutines, could also use context.
 	}
 
@@ -76,7 +85,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
-	log.Infof("Launched server on port %s", *flagAddr)
+	log.Infof("Launched server on port %s, controlling %d services", *flagAddr, serviceCnt)
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)

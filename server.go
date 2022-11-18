@@ -76,6 +76,8 @@ func (s *Service) SetState(st State, info string) {
 	s.stateStamp = time.Now().UTC()
 	s.state = st
 	s.stateInfo = info
+
+	metricServiceHash.WithLabelValues(s.Service, s.hash, s.state.String()).Set(1)
 }
 
 func (s *Service) Hash() string {
@@ -134,7 +136,6 @@ func (s *Service) trackUpstream(stop chan bool) {
 	for {
 		s.SetHash(gc.Hash())
 		state, info := s.State()
-		metricServiceHash.WithLabelValues(s.Service, s.Hash(), state.String()).Set(1)
 
 		time.Sleep(s.Duration)
 
@@ -174,10 +175,8 @@ func (s *Service) trackUpstream(stop chan bool) {
 		}
 
 		s.SetHash(gc.Hash())
-		// reset state, to update timestamp. should be StateOK actually??
 		state, info = s.State()
 		s.SetState(state, info)
-		metricServiceHash.WithLabelValues(s.Service, s.Hash(), state.String()).Set(1)
 
 		log.Infof("Machine %q, diff in repo %q, pinging service: %s", s.Machine, s.Upstream, s.Service)
 		if err := s.systemctl(); err != nil {

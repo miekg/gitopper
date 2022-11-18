@@ -136,7 +136,7 @@ func main() {
 			{
 				Name:    "state",
 				Aliases: []string{"st"},
-				Usage:   "list machines, services or a single service",
+				Usage:   "apply state changes to a service on a machine",
 				Subcommands: []*cli.Command{
 					{
 						Name:    "freeze",

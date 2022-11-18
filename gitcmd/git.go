@@ -49,6 +49,10 @@ func (g *Git) run(args ...string) ([]byte, error) {
 
 	out, err := cmd.CombinedOutput()
 	log.Debug(string(out))
+	metricGitOps.Inc()
+	if err != nil {
+		metricGitFail.Inc()
+	}
 
 	return out, err
 }

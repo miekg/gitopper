@@ -85,35 +85,36 @@ See proto/proto.go for the defined interface. Interaction is REST, thus JSON. Yo
 * unfreeze a service, i.e. to let it pull again
 * rollback a service to a specific commit
 
+routes.go defines where the metrics live.
+
 *do we need a freeze all for everything on the system?*
+
+## Metrics
+
+The following metrics are exported:
+
+* gitopper_service_info{"service", "hash", "state"}, where 'hash' is unbounded, but we really care
+  about that value.
+* gitopper_machine_git_error_total - total number of errors when running git.
+* gitopper_machine_git_ops_total - total number of git runs.
+
+Metircs are available under the /metrics endpoint.
 
 ## Client
 
 A client is included in cmd/gitopperctl. It has it's own README.md.
 
+
 ## Notes and Crap
 
 Authentication...? Some plugins based solution?
 
-## metrics
-
-~~~ txt
-gitopper_machine_info{machine="..."} 1.0
-gitopper_service_hash{service="...", hash="..."} 1.0
-gitopper_service_frozen{service="..."} 1.0
-gitopper_service_ok{service="..."} 1.0
-gitopper_service_failure_count{} 1.0
-~~~
-
-Some are implemented under the /metrics endpoint.
 
 ## TODO
 
 * Move orign/main to config
 * Move pull duration to config (but set minimum)
-* SetState sets metric?
-* check metrics
+
 * TESTS
 * Bootstrapping
 * Reload config on the fly and re-initialize
-* Remove mount in favor of a generic location in var?

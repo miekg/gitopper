@@ -174,7 +174,9 @@ func (s *Service) trackUpstream(stop chan bool) {
 		}
 
 		s.SetHash(gc.Hash())
-		state, _ = s.State()
+		// reset state, to update timestamp. should be StateOK actually??
+		state, info = s.State()
+		s.SetState(state, info)
 		metricServiceHash.WithLabelValues(s.Service, s.Hash(), state.String()).Set(1)
 
 		log.Infof("Machine %q, diff in repo %q, pinging service: %s", s.Machine, s.Upstream, s.Service)

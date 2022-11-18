@@ -18,8 +18,8 @@ Each will output a simple table with the information:
 
 ~~~
 % ./gitopperctl list service @localhost grafana-server
-SERVICE         HASH     STATE
-grafana-server  606eb57  OK
+SERVICE         HASH                                      STATE  INFO  SINCE
+grafana-server  606eb576c1b91248e4c1c4cd0d720f27ac0deb70  OK           2022-11-18 13:29:44.824004812 +0000 UTC
 ~~~
 
 `--help` show implemented subcommands.

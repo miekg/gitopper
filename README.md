@@ -83,6 +83,7 @@ See proto/proto.go for the defined interface. Interaction is REST, thus JSON. Yo
 
 * freeze a service to the current git commit
 * unfreeze a service, i.e. to let it pull again
+* rollback a service to a specific commit
 
 *do we need a freeze all for everything on the system?*
 
@@ -92,23 +93,7 @@ A client is included in cmd/gitopperctl. It has it's own README.md.
 
 ## Notes and Crap
 
-TODO in the ctl:
-
-gitopperctl freeze @machine <service-name> [<duration>]
-    /state/freeze/<name>?dur=5s
-
-gitopperctl unfreeze @machine <service-name>
-    /state/unfreeze/<name>
-
-gitopperctl rollback @machine <service-name> <hash>
-    /state/rollback/<name>?to=<hash>
-
-gitoppercli redo @machine <service-name>
-    /state/redo/<name>
-
-## Authentication
-
-...
+Authentication...? Some plugins based solution?
 
 ## metrics
 
@@ -131,3 +116,4 @@ Some are implemented under the /metrics endpoint.
 * TESTS
 * Bootstrapping
 * Reload config on the fly and re-initialize
+* Remove mount in favor of a generic location in var?

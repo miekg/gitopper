@@ -19,6 +19,7 @@ func newRouter(c Config) *mux.Router {
 	router.Path("/list/machines").Methods("GET").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ListMachines(c, w, r)
 	})
+	// don't really need a seperate one for this, can be /service without a service
 	router.Path("/list/services").Methods("GET").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ListServices(c, w, r)
 	})

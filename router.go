@@ -4,10 +4,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/miekg/gitopper/osutil"
 	"github.com/miekg/gitopper/proto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.science.ru.nl/log"
@@ -46,11 +46,10 @@ func ListMachines(c Config, w http.ResponseWriter, r *http.Request) {
 	lm := proto.ListMachines{
 		ListMachines: make([]proto.ListMachine, len(c.Services)),
 	}
-	hostname, _ := os.Hostname()
 	for i, service := range c.Services {
 		lm.ListMachines[i] = proto.ListMachine{
 			Machine: service.Machine,
-			Actual:  hostname,
+			Actual:  osutil.Hostname(),
 		}
 	}
 	data, err := json.Marshal(lm)

@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/miekg/gitopper/osutil"
 	"go.science.ru.nl/log"
 )
 
@@ -23,8 +24,7 @@ var (
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
+	flagHosts.Set(osutil.Hostname())
 	flag.Var(&flagHosts, "h", "hosts to impersonate, can be given multiple times, $HOSTNAME is included by default")
 	duration := 30 * time.Second
 	flag.Parse()
@@ -58,6 +58,9 @@ func main() {
 		}
 	}()
 	log.Infof("Launched server on port %s", *flagAddr)
+
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
 
 	var wg sync.WaitGroup
 	for _, serv := range c.Services {
@@ -124,12 +127,4 @@ func main() {
 		}
 	}()
 	wg.Wait()
-}
-
-func init() {
-	h, err := os.Hostname()
-	if err != nil {
-		h = os.Getenv("HOSTNAME")
-	}
-	flagHosts.Set(h)
 }

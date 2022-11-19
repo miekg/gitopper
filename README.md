@@ -99,8 +99,6 @@ See proto/proto.go for the defined interface. Interaction is REST, thus JSON. Yo
 
 routes.go defines where the metrics live.
 
-*do we need a freeze all for everything on the system?*
-
 ## Metrics
 
 The following metrics are exported:
@@ -116,17 +114,14 @@ Metrics are available under the /metrics endpoint.
 
 A client is included in cmd/gitopperctl. It has it's own README.md.
 
+## Authentication
 
-## Notes and Crap
-
-Authentication...? Some plugins based solution?
-
+TODO...? Some plugins based solution?
 
 ## TODO
-
-* Move orign/main to config
-* Move pull duration to config (but set minimum)
 
 * TESTS
 * Bootstrapping
 * Reload config on the fly and re-initialize
+* authentication for destructive action
+* TLS

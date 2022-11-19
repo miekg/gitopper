@@ -3,11 +3,11 @@
 package gitcmd
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"os/exec"
 	"path"
-	"strings"
 	"syscall"
 
 	"github.com/miekg/gitopper/osutil"
@@ -59,7 +59,7 @@ func (g *Git) run(args ...string) ([]byte, error) {
 		metricGitFail.Inc()
 	}
 
-	return out, err
+	return bytes.TrimSpace(out), err
 }
 
 // IsCheckedOut will check g.mount and if it has an .git sub directory we assume the checkout has been done.
@@ -118,7 +118,7 @@ func (g *Git) Hash() string {
 	if err != nil {
 		return ""
 	}
-	return strings.TrimSpace(string(out))
+	return string(out)
 }
 
 // Rollback checks out commit <hash>, and return nil if no errors are encountered.

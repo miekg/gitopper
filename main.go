@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/miekg/gitopper/osutil"
 	"go.science.ru.nl/log"
 )
 
@@ -20,27 +22,46 @@ var (
 	flagConfig = flag.String("c", "", "config file to read")
 	flagAddr   = flag.String("a", ":8000", "address to listen on")
 	flagDebug  = flag.Bool("d", false, "enable debug logging")
+	// bootstrap flags
+	flagUpstream = flag.String("U", "", "when bootstrapping use this git repo")
+	flagDir      = flag.String("D", "gitopper", "directory to sparse checkout")
+	flagBranch   = flag.String("B", "main", "when bootstrapping check out in this branch")
+	flagMount    = flag.String("M", "", "when bootstrapping use this dir as mount, if given -c is relative to this dir")
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
-	flag.Var(&flagHosts, "h", "hosts to impersonate, can be given multiple times, $HOSTNAME is included by default")
-	(&flagHosts).Set(os.Getenv("HOSTNAME"))
+	flag.Var(&flagHosts, "h", "hosts to impersonate, can be given multiple times, local hostname is included by default")
+	(&flagHosts).Set(osutil.Hostname())
 	duration := 30 * time.Second
 	flag.Parse()
 
 	if *flagDebug {
 		log.D.Set()
 	}
-
 	if *flagConfig == "" {
 		log.Fatalf("-c flag is mandatory")
 	}
 
+	// Adding ourselves in a local git repo fails with 'dubious ownership' because gitopper needs root, and the repo
+	// is checked out by Joe User. So we only do this when the bootstrap flags are given. In that case we add
+	// ourselves to the managed services managed.
+	self := selfService(*flagUpstream, *flagBranch, *flagMount, *flagDir)
+	if self != nil {
+		gc := self.newGitCmd()
+		// Initial checkout - if needed.
+		err := gc.Checkout()
+		if err != nil {
+			log.Warningf("Machine %q, error pulling repo %q: %s", self.Machine, self.Upstream, err)
+			self.SetState(StateBroken, fmt.Sprintf("error pulling %q: %s", self.Upstream, err))
+			// no we have a problem.... I think this is a fatal error
+		}
+		*flagConfig = path.Join(path.Join(self.Mount, self.Service), *flagConfig)
+		log.Infof("Setting config to %s", *flagConfig)
+	}
+
 	doc, err := os.ReadFile(*flagConfig)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to read config %q: %s", *flagConfig, err)
 	}
 	c, err := parseConfig(doc)
 	if err != nil {
@@ -51,7 +72,7 @@ func main() {
 		log.Fatalf("The configuration is not valid: %s", err)
 	}
 
-	router := newRouter(c)
+	router := newRouter(&c)
 	go func() {
 		// TODO: Interrupt HTTP serving through context cancellation.
 		if err := http.ListenAndServe(*flagAddr, router); err != nil {
@@ -60,6 +81,14 @@ func main() {
 	}()
 	log.Infof("Launched server on port %s", *flagAddr)
 
+	if self != nil {
+		log.Infof("Adding ourselves to managed services, for machine %s", self.Machine)
+		// this need locking
+		c.Services = append(c.Services, self)
+	}
+
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
 	var wg sync.WaitGroup
 	for _, s := range c.Services {
 		if !s.forMe(flagHosts) {
@@ -106,6 +135,13 @@ func main() {
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		trackConfig(ctx, *flagConfig, done)
+	}()
+
 	go func() {
 		select {
 		case s := <-done:

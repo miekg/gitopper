@@ -50,6 +50,22 @@ const (
 	StateBroken                // The service is broken, i.e. didn't start, systemctl error, etc.
 )
 
+// selfService return a Service struct for ourselves.
+func selfService(upstream, branch, mount, dir string) *Service {
+	if upstream == "" || branch == "" || mount == "" {
+		return nil
+	}
+	return &Service{
+		Upstream: upstream,
+		Branch:   branch,
+		Mount:    mount,
+		Action:   "restart", // do we want this, not running in systemd right now
+		Service:  "gitopper",
+		Machine:  osutil.Hostname(),
+		Dirs:     []Dir{{Link: dir}},
+	}
+}
+
 func (s State) String() string {
 	switch s {
 	case StateOK:
@@ -208,6 +224,10 @@ func (s *Service) systemctl() error {
 func (s *Service) bindmount() (int, error) {
 	mounted := 0
 	for _, d := range s.Dirs {
+		if d.Local == "" {
+			continue
+		}
+
 		gitdir := path.Join(s.Mount, s.Service)
 		gitdir = path.Join(gitdir, d.Link)
 

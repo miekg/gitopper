@@ -4,16 +4,16 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/miekg/gitopper/osutil"
 	"github.com/miekg/gitopper/proto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.science.ru.nl/log"
 )
 
-func newRouter(c Config) *mux.Router {
+func newRouter(c *Config) *mux.Router {
 	router := mux.NewRouter()
 	router.Path("/metrics").Handler(promhttp.Handler())
 
@@ -42,15 +42,14 @@ func newRouter(c Config) *mux.Router {
 	return router
 }
 
-func ListMachines(c Config, w http.ResponseWriter, r *http.Request) {
+func ListMachines(c *Config, w http.ResponseWriter, r *http.Request) {
 	lm := proto.ListMachines{
 		ListMachines: make([]proto.ListMachine, len(c.Services)),
 	}
-	hostname, _ := os.Hostname()
 	for i, service := range c.Services {
 		lm.ListMachines[i] = proto.ListMachine{
 			Machine: service.Machine,
-			Actual:  hostname,
+			Actual:  osutil.Hostname(),
 		}
 	}
 	data, err := json.Marshal(lm)
@@ -63,7 +62,7 @@ func ListMachines(c Config, w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func ListServices(c Config, w http.ResponseWriter, r *http.Request) {
+func ListServices(c *Config, w http.ResponseWriter, r *http.Request) {
 	ls := proto.ListServices{
 		ListServices: make([]proto.ListService, len(c.Services)),
 	}
@@ -87,7 +86,7 @@ func ListServices(c Config, w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func ListService(c Config, w http.ResponseWriter, r *http.Request) {
+func ListService(c *Config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	for _, service := range c.Services {
 		if service.Service == vars["service"] {
@@ -113,7 +112,7 @@ func ListService(c Config, w http.ResponseWriter, r *http.Request) {
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }
 
-func FreezeService(c Config, state State, w http.ResponseWriter, r *http.Request) {
+func FreezeService(c *Config, state State, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	for _, service := range c.Services {
 		if service.Service == vars["service"] {
@@ -126,7 +125,7 @@ func FreezeService(c Config, state State, w http.ResponseWriter, r *http.Request
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }
 
-func RollbackService(c Config, w http.ResponseWriter, r *http.Request) {
+func RollbackService(c *Config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	if _, err := hex.DecodeString(vars["hash"]); err != nil {
 		http.Error(w, http.StatusText(http.StatusNotAcceptable)+", not a valid git hash: "+vars["hash"], http.StatusNotFound)

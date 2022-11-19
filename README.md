@@ -34,7 +34,7 @@ From the doc:
 - Install grafana OSS version from the their website (just using this as a test case, nothing
   special here)
 - Compile the gitopper binary: `go build`
-- Start as root: `sudo ./gitopper -c config`
+- Start as root: `sudo ./gitopper -c config -h grafana.atoom.net`
 
 And things should work then. I.e. in /etc/grafana you should see the content of the
 *miekg/blah-origin* repository.
@@ -128,9 +128,9 @@ A client is included in cmd/gitopperctl. It has its own README.md.
 
 TODO...? Some plugins based solution?
 
+## Possible Issues
 ## TODO
 
 * Bootstrapping
- - need this binary on the machine -- can't help with that, and a git repo that get's pulled.
 * Authentication for destructive action
 * TLS (certmagic?)

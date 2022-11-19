@@ -8,11 +8,26 @@ it will actually need. Several bind mounts are then setup to give the service ac
 Git. If the target directories don't exist, they will be created, with the current user - if
 specified.
 
+## Features Implemented
+
+From the doc:
+
+> * metrics, so rollouts/updates can be tracked;
+> * diff detection, so we know state doesn’t reconcile;
+> * out of band rollbacks;
+> * no client side processing;
+> * canarying.
+
+- *Metrics*: are included see below, they export a Git hash, so a rollout can be tracked.
+- *Diff detection*: possible using the metrics or gitopperctl.
+- *Out of band rollbacks*: use gitopperctl to bypass the normal Git workflow.
+- *No client side processing*: files are used as the are in the Git repo.
+- *Canarying*: give a service a different branch to checkout.
+
 ## Quickstart
 
 - Install grafana OSS version from the their website (just using this as a test case, nothing
   special here)
-- `mkdir /etc/grafana` and `mkdir -p /var/lib/grafana/dashboards` (see above)
 - Compile the gitopper binary: `go build`
 - Start as root: `sudo ./gitopper -c config`
 
@@ -46,10 +61,8 @@ would be nice to have this state in the git repo somehow?).
   BROKEN.
 * `BROKEN`: something with the service is broken, we're still tracking upstream.
 
-Maybe also a NOT-RUNNING? Or should that be monitoring???
-
-State transitions:
-
+ROLLBACK is a transient state and quickly moves to FREEZE, unless something goes wrong then it
+becomes BROKEN.
 
 ## Config File
 
@@ -60,6 +73,7 @@ mount = "/tmp"                                     # directory where to download
 
 [[services]]
 machine = "grafana.atoom.net" # hostname of the machine, so a host knows when to pick this up.
+branch = "main"               # what branch to checkout
 service = "grafana-server"    # service identifier, if it's used by systemd it must be the systemd service name
 package = "grafana"           # as used by package mgmt, may be empty (not implemented yet)
 user = "grafana"              # do the checkout with this user

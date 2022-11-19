@@ -16,6 +16,7 @@ import (
 
 type Git struct {
 	upstream string
+	branch   string
 	mount    string
 	dirs     []string
 	user     string
@@ -24,12 +25,15 @@ type Git struct {
 }
 
 // New returns a pointer to an intialized Git.
-func New(upstream, mount, user string, dirs []string) *Git {
+func New(upstream, branch, mount, user string, dirs []string) *Git {
 	g := &Git{
 		upstream: upstream,
 		mount:    mount,
 		dirs:     dirs,
 		user:     user,
+	}
+	if branch == "" {
+		g.branch = "main"
 	}
 	return g
 }
@@ -74,7 +78,7 @@ func (g *Git) Checkout() error {
 	}
 
 	g.cwd = ""
-	_, err := g.run("clone", "--filter=blob:none", "--no-checkout", "--sparse", g.upstream, g.mount)
+	_, err := g.run("clone", "-b", g.branch, "--filter=blob:none", "--no-checkout", "--sparse", g.upstream, g.mount)
 	if err != nil {
 		return err
 	}
@@ -97,7 +101,7 @@ func (g *Git) Pull() (bool, error) {
 	g.cwd = g.mount
 	defer func() { g.cwd = "" }()
 
-	out, err := g.run("pull", "--stat", "origin", "main") // TODO: move to config???
+	out, err := g.run("pull", "--stat", "origin", g.branch)
 	if err != nil {
 		return false, err
 	}

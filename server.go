@@ -18,6 +18,7 @@ import (
 // Service contains the service configuration tied to a specific machine.
 type Service struct {
 	Upstream string // The URL of the (upstream) Git repository.
+	Branch   string // The branch to track (defaults to 'main').
 	Service  string // Identifier for the service - will be used for action.
 	Machine  string // Identifier for this machine - may be shared with multiple machines.
 	Package  string // The package that might need installing.
@@ -123,7 +124,7 @@ func (s *Service) newGitCmd() *gitcmd.Git {
 	for _, d := range s.Dirs {
 		dirs = append(dirs, d.Link)
 	}
-	return gitcmd.New(s.Upstream, path.Join(s.Mount, s.Service), s.User, dirs)
+	return gitcmd.New(s.Upstream, s.Branch, path.Join(s.Mount, s.Service), s.User, dirs)
 }
 
 // TrackUpstream does all the administration to track upstream and issue systemctl commands to keep the process

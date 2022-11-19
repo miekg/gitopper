@@ -6,7 +6,7 @@ import (
 )
 
 func TestHash(t *testing.T) {
-	g := New("", ".", "", nil)
+	g := New("", "", ".", "", nil)
 
 	hash := g.Hash()
 	if hash == "" {
@@ -22,7 +22,7 @@ func TestHash(t *testing.T) {
 }
 
 func TestDiffStatOK(t *testing.T) {
-	g := New("", ".", "", []string{"my/stuff"})
+	g := New("", "", ".", "", []string{"my/stuff"})
 
 	data := []byte(`remote: Enumerating objects: 10, done.
 remote: Counting objects: 100% (10/10), done.
@@ -45,7 +45,7 @@ Fast-forward
 }
 
 func TestDiffStatFail(t *testing.T) {
-	g := New("", ".", "", []string{"other/stuff"})
+	g := New("", "", ".", "", []string{"other/stuff"})
 
 	data := []byte(`remote: Enumerating objects: 10, done.
 remote: Counting objects: 100% (10/10), done.

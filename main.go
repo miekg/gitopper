@@ -128,11 +128,3 @@ func main() {
 	}()
 	wg.Wait()
 }
-
-func init() {
-	h, err := os.Hostname()
-	if err != nil {
-		h = os.Getenv("HOSTNAME")
-	}
-	flagHosts.Set(h)
-}

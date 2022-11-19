@@ -208,6 +208,10 @@ func (s *Service) systemctl() error {
 func (s *Service) bindmount() (int, error) {
 	mounted := 0
 	for _, d := range s.Dirs {
+		if d.Local == "" {
+			continue
+		}
+
 		gitdir := path.Join(s.Mount, s.Service)
 		gitdir = path.Join(gitdir, d.Link)
 

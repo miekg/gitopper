@@ -98,7 +98,7 @@ func main() {
 							}
 							tbl := table.New("#", "SERVICE", "HASH", "STATE", "INFO", "SINCE")
 							for i, ls := range ls.ListServices {
-								tbl.AddRow(i, ls.Service, ls.Hash, ls.State, ls.StateInfo, timeIsZero(ls.StateChange))
+								tbl.AddRow(i, ls.Service, ls.Hash, ls.State, ls.StateInfo, ls.StateChange)
 							}
 							tbl.Print()
 							return nil
@@ -126,7 +126,7 @@ func main() {
 								return err
 							}
 							tbl := table.New("SERVICE", "HASH", "STATE", "INFO", "SINCE")
-							tbl.AddRow(ls.Service, ls.Hash, ls.State, ls.StateInfo, timeIsZero(ls.StateChange))
+							tbl.AddRow(ls.Service, ls.Hash, ls.State, ls.StateInfo, ls.StateChange)
 							tbl.Print()
 							return nil
 						},
@@ -201,17 +201,4 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
-}
-
-// If the string s is a IsZero() time, we return N/A as we don't know when the last state change was.
-func timeIsZero(s string) string {
-	return s
-	t, err := time.Parse(time.RFC1123, s)
-	if err != nil {
-		return "N/A"
-	}
-	if t.IsZero() {
-		return "N/A"
-	}
-	return s
 }

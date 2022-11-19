@@ -34,7 +34,7 @@ From the doc:
 - Install grafana OSS version from the their website (just using this as a test case, nothing
   special here)
 - Compile the gitopper binary: `go build`
-- Start as root: `sudo ./gitopper -c config`
+- Start as root: `sudo ./gitopper -c config.toml -h grafana.atoom.net`
 
 And things should work then. I.e. in /etc/grafana you should see the content of the
 *miekg/blah-origin* repository.

@@ -38,7 +38,11 @@ func main() {
 		log.Fatalf("-c flag is mandatory")
 	}
 
-	c, err := parseConfig(*flagConfig)
+	doc, err := os.ReadFile(*flagConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+	c, err := parseConfig(doc)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,7 +51,15 @@ func main() {
 		log.Fatalf("The configuration is not valid: %s", err)
 	}
 
-	serviceCnt := 0
+	router := newRouter(c)
+	go func() {
+		// TODO: Interrupt HTTP serving through context cancellation.
+		if err := http.ListenAndServe(*flagAddr, router); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	log.Infof("Launched server on port %s", *flagAddr)
+
 	var wg sync.WaitGroup
 	for _, s := range c.Services {
 		if !s.forMe(flagHosts) {
@@ -74,7 +86,6 @@ func main() {
 			s1.SetState(StateBroken, fmt.Sprintf("error setting up bind mounts repo %q: %s", s.Upstream, err))
 			continue
 		}
-		serviceCnt++
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -82,22 +93,16 @@ func main() {
 		}()
 	}
 
-	router := newRouter(c)
-
-	go func() {
-		// TODO: Interrupt HTTP serving through context cancellation.
-		if err := http.ListenAndServe(*flagAddr, router); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	log.Infof("Launched server on port %s, controlling %d services", *flagAddr, serviceCnt)
-
 	done := make(chan os.Signal, 1)
-	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	go func() {
 		select {
-		case <-done:
+		case s := <-done:
 			cancel()
+			// on HUP exit with exit status 2, so systemd can restart us (Restart=OnFailure)
+			if s == syscall.SIGHUP {
+				defer os.Exit(2)
+			}
 		case <-ctx.Done():
 		}
 	}()

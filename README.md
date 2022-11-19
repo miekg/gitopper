@@ -87,7 +87,7 @@ dirs = [
 ]
 ~~~
 
-### REST
+## REST Interface
 
 See proto/proto.go for the defined interface. Interaction is REST, thus JSON. You can
 
@@ -98,8 +98,6 @@ See proto/proto.go for the defined interface. Interaction is REST, thus JSON. Yo
 * freeze a service to the current git commit
 * unfreeze a service, i.e. to let it pull again
 * rollback a service to a specific commit
-
-routes.go defines where the metrics live.
 
 ## Metrics
 
@@ -112,6 +110,13 @@ The following metrics are exported:
 
 Metrics are available under the /metrics endpoint.
 
+## Exit Code
+
+Gitopper has following exit codes:
+
+0 - normal exit
+2 - SIGHUP seen (wait systemd to restart us)
+
 ## Client
 
 A client is included in cmd/gitopperctl. It has it's own README.md.
@@ -122,11 +127,6 @@ TODO...? Some plugins based solution?
 
 ## TODO
 
-* Tests
-  - config
 * Bootstrapping
-* Reload config on the fly and re-initialize?? Or just restart the binary? Might actually be cleaner
-  and easier.
-* Start webservice before doing checkouts?
 * authentication for destructive action
 * TLS

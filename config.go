@@ -1,8 +1,8 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
-	"os"
 
 	toml "github.com/pelletier/go-toml/v2"
 )
@@ -13,15 +13,10 @@ type Config struct {
 	Services []*Service
 }
 
-func parseConfig(file string) (Config, error) {
-	var c Config
-
-	doc, err := os.ReadFile(file)
-	if err != nil {
-		return c, err
-	}
-
-	err = toml.Unmarshal([]byte(doc), &c)
+func parseConfig(doc []byte) (c Config, err error) {
+	t := toml.NewDecoder(bytes.NewReader(doc))
+	t.DisallowUnknownFields()
+	err = t.Decode(&c)
 	return c, err
 }
 

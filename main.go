@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/miekg/gitopper/osutil"
 	"go.science.ru.nl/log"
 )
 
@@ -25,8 +26,10 @@ var (
 func main() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
+
 	flag.Var(&flagHosts, "h", "hosts to impersonate, can be given multiple times, $HOSTNAME is included by default")
 	duration := 30 * time.Second
+	flagHosts.Set(osutil.Hostname())
 	flag.Parse()
 
 	if *flagDebug {

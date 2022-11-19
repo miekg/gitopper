@@ -204,7 +204,9 @@ func (s *Service) systemctl() error {
 	return cmd.Run()
 }
 
-func (s *Service) bindmount() error {
+// bindmount sets up the bind mount, the return integer returns how many mounts were performed.
+func (s *Service) bindmount() (int, error) {
+	mounted := 0
 	for _, d := range s.Dirs {
 		gitdir := path.Join(s.Mount, s.Service)
 		gitdir = path.Join(gitdir, d.Link)
@@ -212,13 +214,13 @@ func (s *Service) bindmount() error {
 		if !exists(d.Local) {
 			if err := os.MkdirAll(d.Local, 0775); err != nil {
 				log.Errorf("Directory %q can not be created", d.Local)
-				return fmt.Errorf("failed to create directory %q: %s", d.Local, err)
+				return 0, fmt.Errorf("failed to create directory %q: %s", d.Local, err)
 			}
 			// set base to correct owner
 			uid, gid := osutil.User(s.User)
 			if err := os.Chown(path.Base(d.Local), int(uid), int(gid)); err != nil {
 				log.Errorf("Directory %q can not be chown to %q: %s", d.Local, s.User, err)
-				return fmt.Errorf("failed to chown directory %q to %q: %s", d.Local, s.User, err)
+				return 0, fmt.Errorf("failed to chown directory %q to %q: %s", d.Local, s.User, err)
 			}
 		}
 
@@ -234,13 +236,15 @@ func (s *Service) bindmount() error {
 		if err != nil {
 			if exitError, ok := err.(*exec.ExitError); ok {
 				if e := exitError.ExitCode(); e != 0 {
-					return fmt.Errorf("failed to mount %q, exit code %d", gitdir, e)
+					return 0, fmt.Errorf("failed to mount %q, exit code %d", gitdir, e)
 				}
 			}
-			return fmt.Errorf("failed to mount %q: %s", gitdir, err)
+			return 0, fmt.Errorf("failed to mount %q: %s", gitdir, err)
 		}
+		mounted++
+
 	}
-	return nil
+	return mounted, nil
 }
 
 func exists(p string) bool {

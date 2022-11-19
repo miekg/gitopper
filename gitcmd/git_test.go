@@ -3,9 +3,12 @@ package gitcmd
 import (
 	"encoding/hex"
 	"testing"
+
+	"go.science.ru.nl/log"
 )
 
 func TestHash(t *testing.T) {
+	log.Discard()
 	g := New("", "", ".", "", nil)
 
 	hash := g.Hash()

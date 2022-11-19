@@ -3,9 +3,12 @@ package main
 import (
 	"os"
 	"testing"
+
+	"go.science.ru.nl/log"
 )
 
 func TestInitialGitCheckout(t *testing.T) {
+	log.Discard()
 	temp, err := os.MkdirTemp(os.TempDir(), "")
 	if err != nil {
 		t.Fatalf("Failed to make temp dir: %q: %s", temp, err)

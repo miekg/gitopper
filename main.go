@@ -66,30 +66,41 @@ func main() {
 			continue
 		}
 
-		s1 := s.merge(c.Global, duration)
-		log.Infof("Machine %q %q", s1.Machine, s1.Upstream)
-		gc := s1.newGitCmd()
+		s := s.merge(c.Global, duration)
+		log.Infof("Machine %q %q", s.Machine, s.Upstream)
+		gc := s.newGitCmd()
 
 		// Initial checkout - if needed.
 		err := gc.Checkout()
 		if err != nil {
 			log.Warningf("Machine %q, error pulling repo %q: %s", s.Machine, s.Upstream, err)
-			s1.SetState(StateBroken, fmt.Sprintf("error pulling %q: %s", s.Upstream, err))
+			s.SetState(StateBroken, fmt.Sprintf("error pulling %q: %s", s.Upstream, err))
 			continue
 		}
 
-		log.Infof("Machine %q, repository in %q with %q", s1.Machine, gc.Repo(), gc.Hash())
+		log.Infof("Machine %q, repository in %q with %q", s.Machine, gc.Repo(), gc.Hash())
 
 		// all succesfully done, do the bind mounts and start our puller
-		if err := s1.bindmount(); err != nil {
+		mounts, err := s.bindmount()
+		if err != nil {
 			log.Warningf("Machine %q, error setting up bind mounts for %q: %s", s.Machine, s.Upstream, err)
-			s1.SetState(StateBroken, fmt.Sprintf("error setting up bind mounts repo %q: %s", s.Upstream, err))
+			s.SetState(StateBroken, fmt.Sprintf("error setting up bind mounts repo %q: %s", s.Upstream, err))
 			continue
 		}
+		// Restart any services as they see new files in their bindmounts. Do this here, because we can't be
+		// sure there is an update to a newer commit that would also kick off a restart.
+		if mounts > 0 {
+			if err := s.systemctl(); err != nil {
+				log.Warningf("Machine %q, error running systemctl: %s", s.Machine, err)
+				s.SetState(StateBroken, fmt.Sprintf("error running systemctl %q: %s", s.Upstream, err))
+				// no continue; maybe git pull will make this work later
+			}
+		}
+
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			s1.trackUpstream(ctx)
+			s.trackUpstream(ctx)
 		}()
 	}
 

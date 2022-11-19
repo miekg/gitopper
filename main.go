@@ -59,12 +59,12 @@ func main() {
 	log.Infof("Launched server on port %s", *flagAddr)
 
 	var wg sync.WaitGroup
-	for _, s := range c.Services {
-		if !s.forMe(flagHosts) {
+	for _, serv := range c.Services {
+		if !serv.forMe(flagHosts) {
 			continue
 		}
 
-		s := s.merge(c.Global, duration)
+		s := serv.merge(c.Global, duration)
 		log.Infof("Machine %q %q", s.Machine, s.Upstream)
 		gc := s.newGitCmd()
 

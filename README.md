@@ -10,6 +10,9 @@ it will actually need. Several bind mounts are then setup to give the service ac
 Git. If the target directories don't exist, they will be created, with the current user - if
 specified.
 
+This tool does little more than just pull the repo, but the little it brings to the table allows for
+a GitOps workflow without resorting to Kubernetes like environments.
+
 ## Features Implemented
 
 From the doc:
@@ -26,7 +29,7 @@ From the doc:
 - *No client side processing*: files are used as the are in the Git repo.
 - *Canarying*: give a service a different branch to checkout.
 
-## Quickstart
+## Quick Start
 
 - Install grafana OSS version from the their website (just using this as a test case, nothing
   special here)
@@ -119,7 +122,7 @@ Gitopper has following exit codes:
 
 ## Client
 
-A client is included in cmd/gitopperctl. It has it's own README.md.
+A client is included in cmd/gitopperctl. It has its own README.md.
 
 ## Authentication
 
@@ -128,5 +131,5 @@ TODO...? Some plugins based solution?
 ## TODO
 
 * Bootstrapping
-* authentication for destructive action
-* TLS
+* Authentication for destructive action
+* TLS (certmagic?)

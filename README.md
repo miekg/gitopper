@@ -120,8 +120,11 @@ TODO...? Some plugins based solution?
 
 ## TODO
 
-* TESTS
+* Tests
+  - config
 * Bootstrapping
-* Reload config on the fly and re-initialize
+* Reload config on the fly and re-initialize?? Or just restart the binary? Might actually be cleaner
+  and easier.
+* Start webservice before doing checkouts?
 * authentication for destructive action
 * TLS

@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -43,10 +44,14 @@ func newRouter(c Config) *mux.Router {
 
 func ListMachines(c Config, w http.ResponseWriter, r *http.Request) {
 	lm := proto.ListMachines{
-		Machines: make([]string, len(c.Services)),
+		ListMachines: make([]proto.ListMachine, len(c.Services)),
 	}
+	hostname, _ := os.Hostname()
 	for i, service := range c.Services {
-		lm.Machines[i] = service.Machine
+		lm.ListMachines[i] = proto.ListMachine{
+			Machine: service.Machine,
+			Actual:  hostname,
+		}
 	}
 	data, err := json.Marshal(lm)
 	if err != nil {

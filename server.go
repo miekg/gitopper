@@ -17,23 +17,22 @@ import (
 
 // Service contains the service configuration tied to a specific machine.
 type Service struct {
-	Upstream string // The URL of the (upstream) Git repository.
-	Branch   string // The branch to track (defaults to 'main').
-	Service  string // Identifier for the service - will be used for action.
-	Machine  string // Identifier for this machine - may be shared with multiple machines.
-	Package  string // The package that might need installing.
-	User     string // what user to use for checking out the repo.
-	Action   string // The systemd action to take when files have changed.
-	Mount    string // Together with Service this is the directory where the sparse git repo is checked out.
-	Dirs     []Dir  // How to map our local directories to the git repository.
+	Upstream string        // The URL of the (upstream) Git repository.
+	Branch   string        // The branch to track (defaults to 'main').
+	Service  string        // Identifier for the service - will be used for action.
+	Machine  string        // Identifier for this machine - may be shared with multiple machines.
+	Package  string        // The package that might need installing.
+	User     string        // what user to use for checking out the repo.
+	Action   string        // The systemd action to take when files have changed.
+	Mount    string        // Together with Service this is the directory where the sparse git repo is checked out.
+	Dirs     []Dir         // How to map our local directories to the git repository.
+	Duration time.Duration `toml:"_"` // how much to sleep between pulls
 
-	Duration     time.Duration `toml:"_"` // how much to sleep between pulls
 	state        State
-	stateInfo    string        // extra info some states carry
-	stateStamp   time.Time     // when did state change (UTC).
-	hash         string        // git hash of the current git checkout
-	sync.RWMutex               // protects State and friends
-	freezeDur    time.Duration // how long to freeze for, 0 is until unfreeze (TODO: unused)
+	stateInfo    string    // Extra info some states carry.
+	stateStamp   time.Time // When did state change (UTC).
+	hash         string    // Git hash of the current git checkout.
+	sync.RWMutex           // Protects state and friends.
 }
 
 type Dir struct {

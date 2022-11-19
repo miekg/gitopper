@@ -105,6 +105,9 @@ func (s *Service) merge(s1 *Service, d time.Duration) *Service {
 		s.Upstream = s1.Upstream
 	}
 	s.Duration = d
+	if s.Branch == "" {
+		s.Branch = "main"
+	}
 	return s
 }
 

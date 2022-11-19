@@ -4,7 +4,7 @@ mount = "/tmp"                                # directory where to download to, 
 
 [[services]]
 machine = "grafana.atoom.net"
-branch = " main"
+branch = "main"
 service = "grafana-server" # as used in systemd
 user = "grafana"
 package = "grafana"  # as used by package mgmt

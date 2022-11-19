@@ -26,14 +26,13 @@ type Git struct {
 
 // New returns a pointer to an intialized Git.
 func New(upstream, branch, mount, user string, dirs []string) *Git {
+	// Git is starting to look a lot like Service....
 	g := &Git{
 		upstream: upstream,
 		mount:    mount,
 		dirs:     dirs,
 		user:     user,
-	}
-	if branch == "" {
-		g.branch = "main"
+		branch:   branch,
 	}
 	return g
 }
@@ -52,7 +51,9 @@ func (g *Git) run(args ...string) ([]byte, error) {
 	log.Infof("running in %q as %q %v", cmd.Dir, g.user, cmd.Args)
 
 	out, err := cmd.CombinedOutput()
-	log.Debug(string(out))
+	if len(out) > 0 {
+		log.Debug(string(out))
+	}
 	metricGitOps.Inc()
 	if err != nil {
 		metricGitFail.Inc()

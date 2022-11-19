@@ -3,7 +3,12 @@ package proto
 
 type (
 	ListMachines struct {
-		Machines []string `json:"machines"`
+		ListMachines []ListMachine `json:"machines"`
+	}
+
+	ListMachine struct {
+		Machine string `json:"machine"` // Machine as set in config file.
+		Actual  string `json:"actual"`  // Actual machine responding (i.e. -h flag might be used)
 	}
 
 	ListServices struct {

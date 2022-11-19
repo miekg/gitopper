@@ -72,9 +72,9 @@ func main() {
 							if err := json.Unmarshal(body, &lm); err != nil {
 								return err
 							}
-							tbl := table.New("#", "MACHINE")
-							for i, m := range lm.Machines {
-								tbl.AddRow(i, m)
+							tbl := table.New("#", "MACHINE", "ACTUAL")
+							for i, m := range lm.ListMachines {
+								tbl.AddRow(i, m.Machine, m.Actual)
 							}
 							tbl.Print()
 							return nil

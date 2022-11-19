@@ -131,5 +131,6 @@ TODO...? Some plugins based solution?
 ## TODO
 
 * Bootstrapping
+ - need this binary on the machine -- can't help with that, and a git repo that get's pulled.
 * Authentication for destructive action
 * TLS (certmagic?)

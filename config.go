@@ -1,11 +1,28 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+
+	toml "github.com/pelletier/go-toml/v2"
+)
 
 // Config holds the gitopper config file. It's is updated every so often to pick up new changes.
 type Config struct {
 	Global   *Service
 	Services []*Service
+}
+
+func parseConfig(file string) (Config, error) {
+	var c Config
+
+	doc, err := os.ReadFile(file)
+	if err != nil {
+		return c, err
+	}
+
+	err = toml.Unmarshal([]byte(doc), &c)
+	return c, err
 }
 
 // Valid checks the config in c and returns nil of all mandatory fields have been set.

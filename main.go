@@ -11,7 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	toml "github.com/pelletier/go-toml/v2"
 	"go.science.ru.nl/log"
 )
 
@@ -38,13 +37,9 @@ func main() {
 	if *flagConfig == "" {
 		log.Fatalf("-c flag is mandatory")
 	}
-	doc, err := os.ReadFile(*flagConfig)
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	var c Config
-	if err := toml.Unmarshal([]byte(doc), &c); err != nil {
+	c, err := parseConfig(*flagConfig)
+	if err != nil {
 		log.Fatal(err)
 	}
 

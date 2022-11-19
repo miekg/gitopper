@@ -14,9 +14,8 @@ import (
 	"go.science.ru.nl/log"
 )
 
-var flagHosts sliceFlag
-
 var (
+	flagHosts  sliceFlag
 	flagConfig = flag.String("c", "", "config file to read")
 	flagAddr   = flag.String("a", ":8000", "address to listen on")
 	flagDebug  = flag.Bool("d", false, "enable debug logging")
@@ -26,7 +25,6 @@ func main() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 	flag.Var(&flagHosts, "h", "hosts to impersonate, can be given multiple times, $HOSTNAME is included by default")
-	(&flagHosts).Set(os.Getenv("HOSTNAME"))
 	duration := 30 * time.Second
 	flag.Parse()
 
@@ -118,4 +116,12 @@ func main() {
 		}
 	}()
 	wg.Wait()
+}
+
+func init() {
+	h, err := os.Hostname()
+	if err != nil {
+		h = os.Getenv("HOSTNAME")
+	}
+	flagHosts.Set(h)
 }

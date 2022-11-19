@@ -42,8 +42,8 @@ Then with cmd/gitopperctl/gitopperctl you can query the server a bit:
 
 ~~~
 % ./gitopperctl list services @localhost
-#  SERVICE         HASH     STATE  INFO  CHANGED
-0  grafana-server  606eb57  OK           Fri, 18 Nov 2022 09:14:52 UTC
+#  SERVICE         HASH                                     STATE  INFO  CHANGED
+0  grafana-server  606eb576c1b91248e4c1c4cd0d720f27ac0deb70 OK           Fri, 18 Nov 2022 09:14:52 UTC
 ~~~
 
 ## Services

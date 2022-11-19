@@ -15,10 +15,11 @@ import (
 )
 
 var (
-	flagHosts  sliceFlag
-	flagConfig = flag.String("c", "", "config file to read")
-	flagAddr   = flag.String("a", ":8000", "address to listen on")
-	flagDebug  = flag.Bool("d", false, "enable debug logging")
+	flagHosts   sliceFlag
+	flagConfig  = flag.String("c", "", "config file to read")
+	flagAddr    = flag.String("a", ":8000", "address to listen on")
+	flagDebug   = flag.Bool("d", false, "enable debug logging")
+	flagRestart = flag.Bool("r", false, "receive SIGHUP when config changes (systemd should then restart us)")
 )
 
 func main() {
@@ -104,6 +105,13 @@ func main() {
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	if *flagRestart {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			trackConfig(ctx, *flagConfig, done)
+		}()
+	}
 	go func() {
 		select {
 		case s := <-done:

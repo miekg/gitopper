@@ -9,7 +9,7 @@ var (
 	metricGitFail = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: "gitopper",
 		Subsystem: "machine",
-		Name:      "git_error_total",
+		Name:      "git_errors_total",
 		Help:      "Total number of git operations that failed.",
 	})
 

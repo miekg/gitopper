@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -22,6 +24,8 @@ var (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
 	flag.Var(&flagHosts, "h", "hosts to impersonate, can be given multiple times, $HOSTNAME is included by default")
 	(&flagHosts).Set(os.Getenv("HOSTNAME"))
 	duration := 30 * time.Second
@@ -49,6 +53,7 @@ func main() {
 	}
 
 	serviceCnt := 0
+	var wg sync.WaitGroup
 	for _, s := range c.Services {
 		if !s.forMe(flagHosts) {
 			continue
@@ -75,12 +80,17 @@ func main() {
 			continue
 		}
 		serviceCnt++
-		go s1.trackUpstream(nil) // TODO: stop goroutines, could also use context.
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			s1.trackUpstream(ctx)
+		}()
 	}
 
 	router := newRouter(c)
 
 	go func() {
+		// TODO: Interrupt HTTP serving through context cancellation.
 		if err := http.ListenAndServe(*flagAddr, router); err != nil {
 			log.Fatal(err)
 		}
@@ -89,5 +99,12 @@ func main() {
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
-	<-done
+	go func() {
+		select {
+		case <-done:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	wg.Wait()
 }

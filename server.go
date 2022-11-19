@@ -128,7 +128,7 @@ func (s *Service) newGitCmd() *gitcmd.Git {
 
 // TrackUpstream does all the administration to track upstream and issue systemctl commands to keep the process
 // informed.
-func (s *Service) trackUpstream(stop chan bool) {
+func (s *Service) trackUpstream(ctx context.Context) {
 	gc := s.newGitCmd()
 
 	log.Infof("Launched tracking routine for %q/%q", s.Machine, s.Service)
@@ -137,7 +137,11 @@ func (s *Service) trackUpstream(stop chan bool) {
 		s.SetHash(gc.Hash())
 		state, info := s.State()
 
-		time.Sleep(s.Duration)
+		select {
+		case <-time.After(s.Duration):
+		case <-ctx.Done():
+			return
+		}
 
 		// this in now only done once... because we set state to broken... Should we keep trying??
 		if state == StateRollback && info != s.hash {

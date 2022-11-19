@@ -138,6 +138,9 @@ then proceed to parse the config file /tmp/gitopper/gitopper/config.toml and pro
 startup. This adds 'gitopper' twice because we set the service to it as well, and that also becomes
 part of the path, so /tmp/"gitopper"/"gitopper"/config.toml.
 
+Note this setup implies you *must* place config.toml *inside* a `gitopper` directory, just as the
+other services must have their own subdirectories.
+
 The gitopper service self is *also* added to the managed services which you can inspect with
 gitopperctl.
 

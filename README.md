@@ -27,7 +27,7 @@ From the doc:
 - *Diff detection*: possible using the metrics or gitopperctl.
 - *Out of band rollbacks*: use gitopperctl to bypass the normal Git workflow.
 - *No client side processing*: files are used as the are in the Git repo.
-- *Canarying*: give a service a different branch to checkout.
+- *Canarying*: give a service a different branch to check out.
 
 ## Quick Start
 
@@ -43,7 +43,7 @@ The checked out git repo in /tmp/grafana1/grafana-server should _only_ contain t
 thanks to the sparse checkout. Changes made to the `crap` subdir in that repo do not trigger a
 grafana restart (not even sure grafana actually needs a restart).
 
-Then with cmd/gitopperctl/gitopperctl you can query the server a bit:
+Then with cmd/gitopperctl/gitopperctl you can query the server:
 
 ~~~
 % ./gitopperctl list services @localhost
@@ -78,10 +78,10 @@ mount = "/tmp"                                     # directory where to download
 
 [[services]]
 machine = "grafana.atoom.net" # hostname of the machine, so a host knows when to pick this up.
-branch = "main"               # what branch to checkout
+branch = "main"               # what branch to check out
 service = "grafana-server"    # service identifier, if it's used by systemd it must be the systemd service name
 package = "grafana"           # as used by package mgmt, may be empty (not implemented yet)
-user = "grafana"              # do the checkout with this user
+user = "grafana"              # do the check out with this user
 action = "reload"             # call systemctl <action> <service> when the git repo changes.
 mount = "/tmp/grafana1"       # where to put the downloaded download (we don't care - might be removed)
 dirs = [
@@ -119,6 +119,27 @@ Gitopper has following exit codes:
 
 0 - normal exit
 2 - SIGHUP seen (wait systemd to restart us)
+
+## Bootstrapping
+
+There are a couple of options that allow gitopper to bootstrap itself *and* make gitopper to be
+managed by gitopper. Basically those options allow you to specificy a service on the command line.
+Gitopper will check out the repo and then proceed to read the config *in that repo* and setup
+everything from there.
+
+I.e.:
+
+~~~
+... -c config.toml -U https://github.com/miekg/blah-origin -D gitopper -M /tmp/
+~~~
+
+Will sparse check out (only the `gitopper` directory) of the repo *blah-origin* in /tmp/gitopper and will
+then proceed to parse the config file /tmp/gitopper/gitopper/config.toml and proceed with a normal
+startup. This adds 'gitopper' twice because we set the service to it as well, and that also becomes
+part of the path, so /tmp/"gitopper"/"gitopper"/config.toml.
+
+The gitopper service self is *also* added to the managed services which you can inspect with
+gitopperctl.
 
 ## Client
 

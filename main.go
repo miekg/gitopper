@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"sync"
 	"syscall"
 	"time"
@@ -20,7 +21,12 @@ var (
 	flagConfig  = flag.String("c", "", "config file to read")
 	flagAddr    = flag.String("a", ":8000", "address to listen on")
 	flagDebug   = flag.Bool("d", false, "enable debug logging")
-	flagRestart = flag.Bool("r", false, "receive SIGHUP when config changes (systemd should then restart us)")
+	flagRestart = flag.Bool("r", false, "send SIGHUP when config changes")
+	// bootstrap flags
+	flagUpstream = flag.String("U", "", "[bootstrapping] use this git repo")
+	flagDir      = flag.String("D", "gitopper", "[bootstrapping] directory to sparse checkout")
+	flagBranch   = flag.String("B", "main", "[bootstrapping] check out in this branch")
+	flagMount    = flag.String("M", "", "[bootstrapping] check out into this directory, -c is relative to this dir")
 )
 
 func main() {
@@ -37,6 +43,19 @@ func main() {
 		log.Fatalf("-c flag is mandatory")
 	}
 
+	// bootstrapping
+	self := selfService(*flagUpstream, *flagBranch, *flagMount, *flagDir)
+	if self != nil {
+		log.Infof("Bootstapping from repo %q", *flagUpstream)
+		gc := self.newGitCmd()
+		err := gc.Checkout()
+		if err != nil {
+			log.Fatalf("Machine %q, error pulling repo %q: %s", self.Machine, self.Upstream, err)
+		}
+		*flagConfig = path.Join(path.Join(path.Join(self.Mount, self.Service), *flagDir), *flagConfig)
+		log.Infof("Setting config to %s", *flagConfig)
+	}
+
 	doc, err := os.ReadFile(*flagConfig)
 	if err != nil {
 		log.Fatal(err)
@@ -48,6 +67,10 @@ func main() {
 
 	if err := c.Valid(); err != nil {
 		log.Fatalf("The configuration is not valid: %s", err)
+	}
+
+	if self != nil {
+		c.Services = append(c.Services, self)
 	}
 
 	router := newRouter(c)

@@ -251,6 +251,21 @@ func (s *Service) bindmount() (int, error) {
 	return mounted, nil
 }
 
+func selfService(upstream, branch, mount, dir string) *Service {
+	if upstream == "" || branch == "" || mount == "" || dir == "" {
+		return nil
+	}
+	return &Service{
+		Upstream: upstream,
+		Branch:   branch,
+		Mount:    mount,
+		Action:   "", // empty, because with -r true systemd will just restart us
+		Service:  "gitopper",
+		Machine:  osutil.Hostname(),
+		Dirs:     []Dir{{Link: dir}},
+	}
+}
+
 func exists(p string) bool {
 	_, err := os.Stat(p)
 	return err == nil

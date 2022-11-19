@@ -1,5 +1,7 @@
 # Gitopper
 
+GitOps for the non-Kubernetes folks.
+
 Watch a remote git repo, pull changes and HUP the service process. For a design doc see:
 <https://miek.nl/2022/november/15/provisioning-services/>.
 

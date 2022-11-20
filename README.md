@@ -106,7 +106,8 @@ repo. Gitopper is currently not smart enough to detect this and fix things on th
 
 ## REST Interface
 
-See proto/proto.go for the defined interface. Interaction is REST, thus JSON. You can
+See proto/proto.go for the defined interface. Interaction is REST, thus JSON. But with a twist all
+list methods are handled via SSH.
 
 * List all defined machines.
 * List services run on the machine.

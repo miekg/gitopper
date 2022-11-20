@@ -106,16 +106,18 @@ repo. Gitopper is currently not smart enough to detect this and fix things on th
 
 ## REST Interface
 
-See proto/proto.go for the defined interface. Interaction is REST, thus JSON. But with a twist all
-list methods are handled via SSH.
+See proto/proto.go for the defined interface. Interaction is REST, thus JSON, but over SSH. Only
+public key(?) authentication is implemented. The following services are implemented:
 
 * List all defined machines.
 * List services run on the machine.
 * List a specific service.
-
 * Freeze a service to the current git commit.
 * Unfreeze a service, i.e. to let it pull again.
 * Rollback a service to a specific commit.
+
+The first 3 technically are open to everyone, but to simplify the implementation they all work over
+SSH.
 
 ## Metrics
 

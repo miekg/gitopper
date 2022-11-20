@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,6 +12,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/gliderlabs/ssh"
 	"github.com/miekg/gitopper/ospkg"
 	"github.com/miekg/gitopper/osutil"
 	"go.science.ru.nl/log"
@@ -72,10 +74,19 @@ func main() {
 		c.Services = append(c.Services, self)
 	}
 
-	router := newRouter(c)
+	newSSHRouter(c)
+	go func() {
+		ssh.ListenAndServe(*flagAddr, nil,
+			ssh.PublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
+				data, _ := ioutil.ReadFile("/home/miek/.ssh/id_ed25519.pub")
+				allowed, _, _, _, _ := ssh.ParseAuthorizedKey(data)
+				return ssh.KeysEqual(key, allowed)
+			}),
+		)
+	}()
 	go func() {
 		// TODO: Interrupt HTTP serving through context cancellation.
-		if err := http.ListenAndServe(*flagAddr, router); err != nil {
+		if err := http.ListenAndServe(*flagAddr, newHTTPRouter()); err != nil {
 			log.Fatal(err)
 		}
 	}()

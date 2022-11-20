@@ -12,32 +12,34 @@ import (
 	"go.science.ru.nl/log"
 )
 
-func newRouter(c Config) *mux.Router {
+func newHTTPRouter() *mux.Router {
 	router := mux.NewRouter()
 	router.Path("/metrics").Handler(promhttp.Handler())
 
-	// listing
-	router.Path("/list/machines").Methods("GET").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ListMachines(c, w, r)
-	})
-	// don't really need a seperate one for this, can be /service without a service
-	router.Path("/list/services").Methods("GET").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ListServices(c, w, r)
-	})
-	router.Path("/list/service/{service}").Methods("GET").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ListService(c, w, r)
-	})
+	/*
+		// listing
+		router.Path("/list/machines").Methods("GET").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ListMachines(c, w, r)
+		})
+		// don't really need a seperate one for this, can be /service without a service
+		router.Path("/list/services").Methods("GET").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ListServices(c, w, r)
+		})
+		router.Path("/list/service/{service}").Methods("GET").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ListService(c, w, r)
+		})
 
-	// state changes
-	router.Path("/state/freeze/{service}").Methods("POST").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		FreezeService(c, StateFreeze, w, r)
-	})
-	router.Path("/state/unfreeze/{service}").Methods("POST").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		FreezeService(c, StateOK, w, r)
-	})
-	//	router.Path("/state/rollback/{service}/{hash}").Methods("POST").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	//		RollbackService(c, w, r)
-	//	})
+		// state changes
+		router.Path("/state/freeze/{service}").Methods("POST").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			FreezeService(c, StateFreeze, w, r)
+		})
+		router.Path("/state/unfreeze/{service}").Methods("POST").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			FreezeService(c, StateOK, w, r)
+		})
+		//	router.Path("/state/rollback/{service}/{hash}").Methods("POST").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//		RollbackService(c, w, r)
+		//	})
+	*/
 	return router
 }
 

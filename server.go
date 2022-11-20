@@ -15,18 +15,19 @@ import (
 	"go.science.ru.nl/mountinfo"
 )
 
+const Duration = 30 * time.Second // increase when production nears, or make a flag.
+
 // Service contains the service configuration tied to a specific machine.
 type Service struct {
-	Upstream string        // The URL of the (upstream) Git repository.
-	Branch   string        // The branch to track (defaults to 'main').
-	Service  string        // Identifier for the service - will be used for action.
-	Machine  string        // Identifier for this machine - may be shared with multiple machines.
-	Package  string        // The package that might need installing.
-	User     string        // what user to use for checking out the repo.
-	Action   string        // The systemd action to take when files have changed.
-	Mount    string        // Together with Service this is the directory where the sparse git repo is checked out.
-	Dirs     []Dir         // How to map our local directories to the git repository.
-	Duration time.Duration `toml:"_"` // how much to sleep between pulls
+	Upstream string // The URL of the (upstream) Git repository.
+	Branch   string // The branch to track (defaults to 'main').
+	Service  string // Identifier for the service - will be used for action.
+	Machine  string // Identifier for this machine - may be shared with multiple machines.
+	Package  string // The package that might need installing.
+	User     string // what user to use for checking out the repo.
+	Action   string // The systemd action to take when files have changed.
+	Mount    string // Together with Service this is the directory where the sparse git repo is checked out.
+	Dirs     []Dir  // How to map our local directories to the git repository.
 
 	state        State
 	stateInfo    string    // Extra info some states carry.
@@ -99,12 +100,14 @@ func (s *Service) Change() time.Time {
 }
 
 // merge merges anything defined in s1 into s and returns the new Service. Currently this is only
-// done for the Upstream field.
-func (s *Service) merge(s1 *Service, d time.Duration) *Service {
+// done for the Upstream and Branch field.
+func (s *Service) merge(s1 *Service) *Service {
 	if s1.Upstream != "" {
 		s.Upstream = s1.Upstream
 	}
-	s.Duration = d
+	if s1.Branch != "" {
+		s.Branch = s1.Branch
+	}
 	if s.Branch == "" {
 		s.Branch = "main"
 	}
@@ -141,7 +144,7 @@ func (s *Service) trackUpstream(ctx context.Context) {
 		state, info := s.State()
 
 		select {
-		case <-time.After(s.Duration):
+		case <-time.After(Duration):
 		case <-ctx.Done():
 			return
 		}

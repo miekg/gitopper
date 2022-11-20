@@ -16,6 +16,9 @@ a GitOps workflow without resorting to Kubernetes like environments.
 The Git repository that you are using to provision the services must have at least one
 (sub)directory for each service.
 
+Gitopper will install packages if told to do so. It will not upgrade or downgrade them, assuming
+there is a better way of doing those.
+
 ## Features Implemented
 
 From the doc:
@@ -164,6 +167,5 @@ TODO...? Some plugins based solution?
 
 ## TODO
 
-* install packages
 * Authentication for destructive action
 * TLS (certmagic?)

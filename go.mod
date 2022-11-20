@@ -3,15 +3,18 @@ module github.com/miekg/gitopper
 go 1.19
 
 require (
+	github.com/gliderlabs/ssh v0.3.5
 	github.com/gorilla/mux v1.8.0
 	github.com/pelletier/go-toml/v2 v2.0.5
 	github.com/prometheus/client_golang v1.13.0
 	github.com/rodaine/table v1.0.1
 	github.com/urfave/cli/v2 v2.23.5
 	go.science.ru.nl v0.0.0-20221117060808-4e07268e5b96
+	golang.org/x/crypto v0.0.0-20220826181053-bd7e27e6170d
 )
 
 require (
+	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect

@@ -15,10 +15,6 @@ import (
 	"go.science.ru.nl/log"
 )
 
-/*
-   fmt.Printf("Body : %s", body)
-*/
-
 func atMachine(ctx *cli.Context) (string, error) {
 	at := ctx.Args().First()
 	if at == "" {

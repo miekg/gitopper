@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -36,9 +35,9 @@ func newRouter(c Config) *mux.Router {
 	router.Path("/state/unfreeze/{service}").Methods("POST").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		FreezeService(c, StateOK, w, r)
 	})
-	router.Path("/state/rollback/{service}/{hash}").Methods("POST").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		RollbackService(c, w, r)
-	})
+	//	router.Path("/state/rollback/{service}/{hash}").Methods("POST").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	//		RollbackService(c, w, r)
+	//	})
 	return router
 }
 
@@ -125,6 +124,7 @@ func FreezeService(c Config, state State, w http.ResponseWriter, r *http.Request
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }
 
+/*
 func RollbackService(c Config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	if _, err := hex.DecodeString(vars["hash"]); err != nil {
@@ -142,3 +142,4 @@ func RollbackService(c Config, w http.ResponseWriter, r *http.Request) {
 	}
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }
+*/

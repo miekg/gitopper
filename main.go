@@ -10,8 +10,8 @@ import (
 	"path"
 	"sync"
 	"syscall"
-	"time"
 
+	"github.com/miekg/gitopper/ospkg"
 	"github.com/miekg/gitopper/osutil"
 	"go.science.ru.nl/log"
 )
@@ -32,7 +32,6 @@ var (
 func main() {
 	flagHosts.Set(osutil.Hostname())
 	flag.Var(&flagHosts, "h", "hosts to impersonate, can be given multiple times, $HOSTNAME is included by default")
-	duration := 30 * time.Second
 	flag.Parse()
 
 	if *flagDebug {
@@ -85,15 +84,25 @@ func main() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
+	pkg := ospkg.New()
+
 	var wg sync.WaitGroup
 	for _, serv := range c.Services {
 		if !serv.forMe(flagHosts) {
 			continue
 		}
 
-		s := serv.merge(c.Global, duration)
+		s := serv.merge(c.Global)
 		log.Infof("Machine %q %q", s.Machine, s.Upstream)
 		gc := s.newGitCmd()
+
+		if s.Package != "" {
+			if err := pkg.Install(s.Package); err != nil {
+				log.Warningf("Machine %q, error installing package %q: %s", s.Machine, s.Package, err)
+				continue // skip this, or continue, if continue and with the bind mounts the future pkg install might also break...
+				// or fatal error??
+			}
+		}
 
 		// Initial checkout - if needed.
 		err := gc.Checkout()

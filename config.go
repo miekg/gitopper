@@ -30,7 +30,7 @@ func parseConfig(doc []byte) (c Config, err error) {
 // Valid checks the config in c and returns nil of all mandatory fields have been set.
 func (c Config) Valid() error {
 	for i, s := range c.Services {
-		s1 := s.merge(c.Global, 0) // don't care about duration here
+		s1 := s.merge(c.Global)
 		if s1.Machine == "" {
 			return fmt.Errorf("machine #%d, has empty machine name", i)
 		}

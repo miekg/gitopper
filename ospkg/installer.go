@@ -4,7 +4,7 @@ import "github.com/miekg/gitopper/osutil"
 
 // Installer represents OS package installation tool.
 type Installer interface {
-	Install(pkg string) error // Install installs the given package at the given version.
+	Install(pkg string) error
 }
 
 // New returns an Installer suited for the current system, or the NoopInstaller when none are found.

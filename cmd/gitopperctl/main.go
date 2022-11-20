@@ -135,7 +135,7 @@ func main() {
 			},
 			{
 				Name:    "state",
-				Aliases: []string{"st"},
+				Aliases: []string{"st", "s"},
 				Usage:   "apply state changes to a service on a machine",
 				Subcommands: []*cli.Command{
 					{

@@ -1,6 +1,9 @@
 # gitopperctl
 
-Small cli to inspect (and soon) control gitopper.
+Small cli to inspect control gitopper remotely. The command line syntax follow other \*-ctl tools a
+bit.
+
+The two main branches of use are `list` and `state`.
 
 ~~~
 ./gitopperctl list machines @<host>
@@ -29,14 +32,20 @@ grafana-server  606eb576c1b91248e4c1c4cd0d720f27ac0deb70  OK           2022-11-1
 Freezing (make it stop updating to the latest commit), until a unfreeze:
 
 ~~~
-./gitopperctl freeze   service @<host> <service>
-./gitopperctl unfreeze service @<host> <service>
+./gitopperctl state freeze   @<host> <service>
+./gitopperctl state unfreeze @<host> <service>
 ~~~
 
 Rolling back to a previous commit, hash needs to be full length:
 
 ~~~
-./gitopperctl rollback service @<host> <service> <hash>
+./gitopperctl state rollback @<host> <service> <hash>
+~~~
+
+And this can be abbreviated to:
+
+~~~
+./gitopperctl s r @<host> <service> <hash>
 ~~~
 
 ## Example

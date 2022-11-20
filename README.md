@@ -13,6 +13,9 @@ specified.
 This tool does little more than just pull the repo, but the little it brings to the table allows for
 a GitOps workflow without resorting to Kubernetes like environments.
 
+The Git repository that you are using to provision the services must have at least one
+(sub)directory for each service.
+
 ## Features Implemented
 
 From the doc:
@@ -72,35 +75,43 @@ becomes BROKEN.
 ## Config File
 
 ~~~ toml
+# global options are applied if a service doens't list them
 [global]
 upstream = "https://github.com/miekg/blah-origin"  # repository where to download from
 mount = "/tmp"                                     # directory where to download to, mount+service is used as path
 
+# each managed service has an entry like this
 [[services]]
 machine = "grafana.atoom.net" # hostname of the machine, so a host knows when to pick this up.
 branch = "main"               # what branch to check out
 service = "grafana-server"    # service identifier, if it's used by systemd it must be the systemd service name
 package = "grafana"           # as used by package mgmt, may be empty (not implemented yet)
 user = "grafana"              # do the check out with this user
-action = "reload"             # call systemctl <action> <service> when the git repo changes.
-mount = "/tmp/grafana1"       # where to put the downloaded download (we don't care - might be removed)
+action = "reload"             # call systemctl <action> <service> when the git repo changes, may be empty
+mount = "/tmp/grafana1"       # where to put the downloaded repo
 dirs = [
     { local = "/etc/grafana", link = "grafana/etc" },
     { local = "/var/lib/grafana/dashboards", link = "grafana/dashboards" }
 ]
 ~~~
 
+### How to Break It
+
+Moving to a new user, will break git pull, with an error like 'dubious ownership of reposiory'. If
+you want a different owner for a service, it's best to change the mount as well so you get a new
+repo. Gitopper is currently not smart enough to detect this and fix things on the fly.
+
 ## REST Interface
 
 See proto/proto.go for the defined interface. Interaction is REST, thus JSON. You can
 
-* list all defined machines
-* list services run on this host
-* list a specific service
+* List all defined machines.
+* List services run on the machine.
+* List a specific service.
 
-* freeze a service to the current git commit
-* unfreeze a service, i.e. to let it pull again
-* rollback a service to a specific commit
+* Freeze a service to the current git commit.
+* Unfreeze a service, i.e. to let it pull again.
+* Rollback a service to a specific commit.
 
 ## Metrics
 
@@ -118,7 +129,7 @@ Metrics are available under the /metrics endpoint.
 Gitopper has following exit codes:
 
 0 - normal exit
-2 - SIGHUP seen (wait systemd to restart us)
+2 - SIGHUP seen (signal to systemd to restart us)
 
 ## Bootstrapping
 
@@ -133,13 +144,12 @@ I.e.:
 ... -c config.toml -U https://github.com/miekg/blah-origin -D gitopper -M /tmp/
 ~~~
 
-Will sparse check out (only the `gitopper` directory) of the repo *blah-origin* in /tmp/gitopper and will
-then proceed to parse the config file /tmp/gitopper/gitopper/config.toml and proceed with a normal
-startup. This adds 'gitopper' twice because we set the service to it as well, and that also becomes
-part of the path, so /tmp/"gitopper"/"gitopper"/config.toml.
+Will sparse check out (only the `gitopper` (-D flag) directory) of the repo *blah-origin* (-U flag)
+in /tmp/gitopper (-M flag, internally '/gitopper' is added) and will then proceed to parse the
+config file /tmp/gitopper/gitopper/config.toml and proceed with a normal startup.
 
-Note this setup implies you *must* place config.toml *inside* a `gitopper` directory, just as the
-other services must have their own subdirectories.
+Note this setup implies that you *must* place config.toml *inside* a `gitopper` directory, just as
+the other services must have their own subdirectories, gitopper needs one too.
 
 The gitopper service self is *also* added to the managed services which you can inspect with
 gitopperctl.
@@ -154,5 +164,6 @@ TODO...? Some plugins based solution?
 
 ## TODO
 
+* install packages
 * Authentication for destructive action
 * TLS (certmagic?)

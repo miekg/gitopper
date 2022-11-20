@@ -15,7 +15,7 @@ import (
 	"go.science.ru.nl/mountinfo"
 )
 
-const Duration = 30 * time.Second // increase when production nears, of make a flag.
+const Duration = 30 * time.Second // increase when production nears, or make a flag.
 
 // Service contains the service configuration tied to a specific machine.
 type Service struct {

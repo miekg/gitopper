@@ -14,7 +14,7 @@ import (
 	"go.science.ru.nl/log"
 )
 
-func newRouter(c Config) {
+func newRouter(c Config, hosts []string) {
 	ssh.Handle(func(s ssh.Session) {
 		if len(s.Command()) == 0 {
 			io.WriteString(s, http.StatusText(http.StatusBadRequest))
@@ -23,7 +23,7 @@ func newRouter(c Config) {
 		}
 		for prefix, f := range routes {
 			if strings.HasPrefix(s.Command()[0], prefix) {
-				f(c, s)
+				f(c, s, hosts)
 				return
 			}
 		}
@@ -33,7 +33,7 @@ func newRouter(c Config) {
 	})
 }
 
-var routes = map[string]func(Config, ssh.Session){
+var routes = map[string]func(Config, ssh.Session, []string){
 	"/list/machine":   ListMachines,
 	"/list/service":   ListService,
 	"/state/freeze":   FreezeService,
@@ -51,7 +51,7 @@ func writeAndExit(s ssh.Session, data []byte, err error) {
 	s.Exit(0)
 }
 
-func ListMachines(c Config, s ssh.Session) {
+func ListMachines(c Config, s ssh.Session, _ []string) {
 	lm := proto.ListMachines{
 		ListMachines: make([]proto.ListMachine, len(c.Services)),
 	}
@@ -65,7 +65,7 @@ func ListMachines(c Config, s ssh.Session) {
 	writeAndExit(s, data, err)
 }
 
-func ListService(c Config, s ssh.Session) {
+func ListService(c Config, s ssh.Session, hosts []string) {
 	ls := proto.ListServices{ListServices: []proto.ListService{}}
 
 	target := ""
@@ -73,7 +73,7 @@ func ListService(c Config, s ssh.Session) {
 		target = s.Command()[1]
 	}
 	for _, service := range c.Services {
-		if !service.forMe(flagHosts) {
+		if !service.forMe(hosts) {
 			continue
 		}
 		state, info := service.State()
@@ -108,18 +108,22 @@ func ListService(c Config, s ssh.Session) {
 	writeAndExit(s, data, err)
 }
 
-func FreezeService(c Config, s ssh.Session) { freezeStateService(c, s, StateFreeze) }
+func FreezeService(c Config, s ssh.Session, hosts []string) {
+	freezeStateService(c, s, StateFreeze, hosts)
+}
 
-func UnfreezeService(c Config, s ssh.Session) { freezeStateService(c, s, StateOK) }
+func UnfreezeService(c Config, s ssh.Session, hosts []string) {
+	freezeStateService(c, s, StateOK, hosts)
+}
 
-func freezeStateService(c Config, s ssh.Session, state State) {
+func freezeStateService(c Config, s ssh.Session, state State, hosts []string) {
 	if len(s.Command()) < 2 {
 		s.Exit(http.StatusNotAcceptable)
 		return
 	}
 	target := s.Command()[1]
 	for _, service := range c.Services {
-		if !service.forMe(flagHosts) {
+		if !service.forMe(hosts) {
 			continue
 		}
 		if service.Service == target {
@@ -134,7 +138,7 @@ func freezeStateService(c Config, s ssh.Session, state State) {
 	s.Exit(http.StatusNotFound)
 }
 
-func RollbackService(c Config, s ssh.Session) {
+func RollbackService(c Config, s ssh.Session, hosts []string) {
 	if len(s.Command()) < 3 {
 		return
 	}
@@ -147,7 +151,7 @@ func RollbackService(c Config, s ssh.Session) {
 	}
 
 	for _, service := range c.Services {
-		if !service.forMe(flagHosts) {
+		if !service.forMe(hosts) {
 			continue
 		}
 		if service.Service == target {

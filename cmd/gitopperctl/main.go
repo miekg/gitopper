@@ -25,6 +25,13 @@ func atMachine(ctx *cli.Context) (string, error) {
 
 func main() {
 	app := &cli.App{
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "i",
+				Value: "",
+				Usage: "identity file",
+			},
+		},
 		Commands: []*cli.Command{
 			{
 				Name:    "list",
@@ -40,7 +47,7 @@ func main() {
 							if err != nil {
 								return err
 							}
-							body, err := querySSH(at, "/list/machine")
+							body, err := querySSH(ctx, at, "/list/machine")
 							if err != nil {
 								return err
 							}
@@ -68,9 +75,9 @@ func main() {
 							var body []byte
 							service := ctx.Args().Get(1)
 							if service != "" {
-								body, err = querySSH(at, "/list/service", service)
+								body, err = querySSH(ctx, at, "/list/service", service)
 							} else {
-								body, err = querySSH(at, "/list/service")
+								body, err = querySSH(ctx, at, "/list/service")
 							}
 							if err != nil {
 								return err
@@ -107,7 +114,7 @@ func main() {
 							if service == "" {
 								return fmt.Errorf("need service")
 							}
-							_, err = querySSH(at, "/state/freeze", service)
+							_, err = querySSH(ctx, at, "/state/freeze", service)
 							return err
 						},
 					},
@@ -124,7 +131,7 @@ func main() {
 							if service == "" {
 								return fmt.Errorf("need service")
 							}
-							_, err = querySSH(at, "/state/unfreeze", service)
+							_, err = querySSH(ctx, at, "/state/unfreeze", service)
 							return err
 						},
 					},
@@ -145,7 +152,7 @@ func main() {
 							if hash == "" {
 								return fmt.Errorf("need hash to rollback to")
 							}
-							_, err = querySSH(at, "/state/rollback", service, hash)
+							_, err = querySSH(ctx, at, "/state/rollback", service, hash)
 							return err
 						},
 					},

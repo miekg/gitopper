@@ -6,10 +6,12 @@ bit.
 The two main branches of use are `list` and `state`.
 
 ~~~
-./gitopperctl list machine @<host>
-./gitopperctl list service @<host>
-./gitopperctl list service  @<host> <service>
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper list machine @<host>
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper list service @<host>
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper list service  @<host> <service>
 ~~~
+
+The -i flag is mandatory, -p PORT is optional.
 
 In order:
 

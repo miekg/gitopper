@@ -76,14 +76,30 @@ func main() {
 		c.Services = append(c.Services, self)
 	}
 
+	allowed := make([]ssh.PublicKey, len(c.Keys))
+	for i, k := range c.Keys {
+		data, err := ioutil.ReadFile(k.Path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		a, _, _, _, err := ssh.ParseAuthorizedKey(data)
+		if err != nil {
+			log.Fatal(err)
+		}
+		allowed[i] = a
+	}
+
 	newRouter(c)
 	go func() {
 		// TODO: Interrupt SSH serving through context cancellation.
 		ssh.ListenAndServe(*flagSAddr, nil,
 			ssh.PublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
-				data, _ := ioutil.ReadFile("/local/home/miek/.ssh/id_ed25519_gitopper.pub")
-				allowed, _, _, _, _ := ssh.ParseAuthorizedKey(data)
-				return ssh.KeysEqual(key, allowed)
+				for _, a := range allowed {
+					if ssh.KeysEqual(a, key) {
+						return true
+					}
+				}
+				return false
 			}),
 		)
 	}()

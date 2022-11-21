@@ -30,7 +30,7 @@ var (
 	flagUpstream = flag.String("U", "", "[bootstrapping] use this git repo")
 	flagDir      = flag.String("D", "gitopper", "[bootstrapping] directory to sparse checkout")
 	flagBranch   = flag.String("B", "main", "[bootstrapping] check out in this branch")
-	flagMount    = flag.String("M", "", "[bootstrapping] check out into this directory, -c is relative to this dir")
+	flagMount    = flag.String("M", "", "[bootstrapping] check out into this directory, -c (and relative key paths ) are relative to this dir")
 )
 
 func main() {
@@ -78,6 +78,12 @@ func main() {
 
 	allowed := make([]ssh.PublicKey, len(c.Keys))
 	for i, k := range c.Keys {
+		if !path.IsAbs(k.Path) && self != nil {
+			newpath := path.Join(path.Join(path.Join(self.Mount, self.Service), *flagDir), k.Path)
+			log.Info("Setting relative key path %s to %s", k.Path, newpath)
+			k.Path = newpath
+		}
+
 		data, err := ioutil.ReadFile(k.Path)
 		if err != nil {
 			log.Fatal(err)

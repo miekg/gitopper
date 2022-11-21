@@ -166,6 +166,9 @@ the other services must have their own subdirectories, gitopper needs one too.
 The gitopper service self is *also* added to the managed services which you can inspect with
 gitopperctl.
 
+Any keys that have *relative* paths, will also be changed to key inside this Git managed directory
+and pick up keys *from that repo*.
+
 ## Client
 
 A client is included in cmd/gitopperctl. It has its own README.md.

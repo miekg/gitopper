@@ -80,7 +80,7 @@ func main() {
 	for i, k := range c.Keys {
 		if !path.IsAbs(k.Path) && self != nil {
 			newpath := path.Join(path.Join(path.Join(self.Mount, self.Service), *flagDir), k.Path)
-			log.Info("Setting relative key path %s to %s", k.Path, newpath)
+			log.Infof("Setting relative key path %s to %s", k.Path, newpath)
 			k.Path = newpath
 		}
 

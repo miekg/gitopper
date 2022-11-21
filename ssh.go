@@ -14,14 +14,14 @@ import (
 	"go.science.ru.nl/log"
 )
 
-func newSSHRouter(c Config) {
+func newRouter(c Config) {
 	ssh.Handle(func(s ssh.Session) {
 		if len(s.Command()) == 0 {
 			io.WriteString(s, http.StatusText(http.StatusBadRequest))
 			s.Exit(http.StatusBadRequest)
 			return
 		}
-		for prefix, f := range sshRoutes {
+		for prefix, f := range routes {
 			if strings.HasPrefix(s.Command()[0], prefix) {
 				f(c, s)
 				return
@@ -33,12 +33,12 @@ func newSSHRouter(c Config) {
 	})
 }
 
-var sshRoutes = map[string]func(Config, ssh.Session){
-	"/list/machines":   ListMachines,
-	"/list/service":    ListService,
-	"/state/freeze/":   FreezeService,
-	"/state/unfreeze/": UnfreezeService,
-	"/state/rollback/": RollbackService,
+var routes = map[string]func(Config, ssh.Session){
+	"/list/machine":   ListMachines,
+	"/list/service":   ListService,
+	"/state/freeze":   FreezeService,
+	"/state/unfreeze": UnfreezeService,
+	"/state/rollback": RollbackService,
 }
 
 func writeAndExit(s ssh.Session, data []byte, err error) {
@@ -70,13 +70,13 @@ func ListService(c Config, s ssh.Session) {
 		ListServices: make([]proto.ListService, len(c.Services)),
 	}
 	target := ""
-	if len(s.Command()) > 0 {
+	if len(s.Command()) > 1 {
 		target = s.Command()[1]
 	}
-
 	for i, service := range c.Services {
-		if target != "" && service.Service == target {
-			state, info := service.State()
+		state, info := service.State()
+		switch {
+		case target == "":
 			ls.ListServices[i] = proto.ListService{
 				Service:     service.Service,
 				Hash:        service.Hash(),
@@ -84,7 +84,17 @@ func ListService(c Config, s ssh.Session) {
 				StateInfo:   info,
 				StateChange: service.Change().Format(time.RFC1123),
 			}
-			break
+		case target != "":
+			if service.Service == target {
+				ls.ListServices[i] = proto.ListService{
+					Service:     service.Service,
+					Hash:        service.Hash(),
+					State:       state.String(),
+					StateInfo:   info,
+					StateChange: service.Change().Format(time.RFC1123),
+				}
+				break
+			}
 		}
 	}
 	data, err := json.Marshal(ls)
@@ -96,11 +106,12 @@ func FreezeService(c Config, s ssh.Session) { freezeStateService(c, s, StateFree
 func UnfreezeService(c Config, s ssh.Session) { freezeStateService(c, s, StateOK) }
 
 func freezeStateService(c Config, s ssh.Session, state State) {
-	if len(s.Command()) < 1 {
+	if len(s.Command()) < 2 {
 		s.Exit(http.StatusNotAcceptable)
 		return
 	}
 	target := s.Command()[1]
+	println("T", target)
 	for _, service := range c.Services {
 		if service.Service == target {
 			service.SetState(state, "")

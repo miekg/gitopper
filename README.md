@@ -178,3 +178,7 @@ A client is included in cmd/gitopperctl. It has its own README.md.
 ## Authentication
 
 Authentication uses SSH, so it fits in with the rest of the infrastructure.
+
+## TODO
+
+- Include systemd service file.

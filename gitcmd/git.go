@@ -48,7 +48,7 @@ func (g *Git) run(args ...string) ([]byte, error) {
 		cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
 	}
 
-	log.Infof("running in %q as %q %v", cmd.Dir, g.user, cmd.Args)
+	log.Debugf("running in %q as %q %v", cmd.Dir, g.user, cmd.Args)
 
 	out, err := cmd.CombinedOutput()
 	if len(out) > 0 {

@@ -39,6 +39,8 @@ From the doc:
 
 - Install grafana OSS version from the their website (just using this as a test case, nothing
   special here)
+- Generate an toy SSH key: `ssh-keygen -t ed25519` and make it write to an `id_ed25519_gitopper` file.
+- Put the path to the *PUBLIC* key (ending in .pub) in the `[[keys]]` section in config.toml
 - Compile the gitopper binary: `go build`
 - Start as root: `sudo ./gitopper -c config.toml -h grafana.atoom.net`
 
@@ -52,7 +54,7 @@ grafana restart (not even sure grafana actually needs a restart).
 Then with cmd/gitopperctl/gitopperctl you can query the server:
 
 ~~~
-% ./gitopperctl list service @localhost
+% ./gitopperctl -i <path-to-your-key> list service @localhost
 #  SERVICE         HASH                                     STATE  INFO  CHANGED
 0  grafana-server  606eb576c1b91248e4c1c4cd0d720f27ac0deb70 OK           Fri, 18 Nov 2022 09:14:52 UTC
 ~~~
@@ -176,9 +178,3 @@ A client is included in cmd/gitopperctl. It has its own README.md.
 ## Authentication
 
 Authentication uses SSH, so it fits in with the rest of the infrastructure.
-
-## TODO
-
-* Authentication for destructive action
-* remove gorilla/mux as not needed
-* implement ssh client and server side and test it

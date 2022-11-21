@@ -39,19 +39,19 @@ func (c Config) Valid() error {
 		return fmt.Errorf("at least one public key should be specified")
 	}
 
-	for i, s := range c.Services {
-		s1 := s.merge(c.Global)
-		if s1.Machine == "" {
+	for i, serv := range c.Services {
+		s := serv.merge(c.Global)
+		if s.Machine == "" {
 			return fmt.Errorf("machine #%d, has empty machine name", i)
 		}
-		if s1.Upstream == "" {
-			return fmt.Errorf("machine #%d %q, has empty upstream", i, s1.Machine)
+		if s.Upstream == "" {
+			return fmt.Errorf("machine #%d %q, has empty upstream", i, s.Machine)
 		}
-		if s1.Mount == "" {
-			return fmt.Errorf("machine #%d %q, has empty mount", i, s1.Machine)
+		if s.Mount == "" {
+			return fmt.Errorf("machine #%d %q, has empty mount", i, s.Machine)
 		}
-		if s1.Service == "" {
-			return fmt.Errorf("machine #%d %q, has empty service", i, s1.Service)
+		if s.Service == "" {
+			return fmt.Errorf("machine #%d %q, has empty service", i, s.Service)
 		}
 	}
 	return nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,22 +12,25 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/gliderlabs/ssh"
 	"github.com/miekg/gitopper/ospkg"
 	"github.com/miekg/gitopper/osutil"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.science.ru.nl/log"
 )
 
 var (
 	flagHosts   sliceFlag
 	flagConfig  = flag.String("c", "", "config file to read")
-	flagAddr    = flag.String("a", ":8000", "address to listen on")
+	flagSAddr   = flag.String("s", ":2222", "ssh address to listen on")
+	flagMAddr   = flag.String("m", ":9222", "http metrics address to listen on")
 	flagDebug   = flag.Bool("d", false, "enable debug logging")
 	flagRestart = flag.Bool("r", false, "send SIGHUP when config changes")
 	// bootstrap flags
 	flagUpstream = flag.String("U", "", "[bootstrapping] use this git repo")
 	flagDir      = flag.String("D", "gitopper", "[bootstrapping] directory to sparse checkout")
 	flagBranch   = flag.String("B", "main", "[bootstrapping] check out in this branch")
-	flagMount    = flag.String("M", "", "[bootstrapping] check out into this directory, -c is relative to this dir")
+	flagMount    = flag.String("M", "", "[bootstrapping] check out into this directory, -c (and relative key paths ) are relative to this dir")
 )
 
 func main() {
@@ -45,7 +49,7 @@ func main() {
 	// bootstrapping
 	self := selfService(*flagUpstream, *flagBranch, *flagMount, *flagDir)
 	if self != nil {
-		log.Infof("Bootstapping from repo %q", *flagUpstream)
+		log.Infof("Bootstapping from repo %q and adding service %q for %q", *flagUpstream, self.Service, self.Machine)
 		gc := self.newGitCmd()
 		err := gc.Checkout()
 		if err != nil {
@@ -72,14 +76,47 @@ func main() {
 		c.Services = append(c.Services, self)
 	}
 
-	router := newRouter(c)
+	allowed := make([]ssh.PublicKey, len(c.Keys))
+	for i, k := range c.Keys {
+		if !path.IsAbs(k.Path) && self != nil { // bootstrapping
+			newpath := path.Join(path.Join(path.Join(self.Mount, self.Service), *flagDir), k.Path)
+			k.Path = newpath
+		}
+
+		log.Infof("Reading public key %q", k.Path)
+		data, err := ioutil.ReadFile(k.Path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		a, _, _, _, err := ssh.ParseAuthorizedKey(data)
+		if err != nil {
+			log.Fatal(err)
+		}
+		allowed[i] = a
+	}
+
+	newRouter(c)
+	go func() {
+		// TODO: Interrupt SSH serving through context cancellation.
+		ssh.ListenAndServe(*flagSAddr, nil,
+			ssh.PublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
+				for _, a := range allowed {
+					if ssh.KeysEqual(a, key) {
+						return true
+					}
+				}
+				return false
+			}),
+		)
+	}()
+	http.Handle("/metrics", promhttp.Handler())
 	go func() {
 		// TODO: Interrupt HTTP serving through context cancellation.
-		if err := http.ListenAndServe(*flagAddr, router); err != nil {
+		if err := http.ListenAndServe(*flagMAddr, nil); err != nil {
 			log.Fatal(err)
 		}
 	}()
-	log.Infof("Launched server on port %s", *flagAddr)
+	log.Infof("Launched servers on port %s and %s from machines: %v", *flagSAddr, *flagMAddr, flagHosts)
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
@@ -87,11 +124,13 @@ func main() {
 	pkg := ospkg.New()
 
 	var wg sync.WaitGroup
+	servCnt := 0
 	for _, serv := range c.Services {
 		if !serv.forMe(flagHosts) {
 			continue
 		}
 
+		servCnt++
 		s := serv.merge(c.Global)
 		log.Infof("Machine %q %q", s.Machine, s.Upstream)
 		gc := s.newGitCmd()
@@ -136,6 +175,11 @@ func main() {
 			defer wg.Done()
 			s.trackUpstream(ctx)
 		}()
+	}
+
+	if servCnt == 0 {
+		log.Warningf("No services found for machine: %v, exiting", flagHosts)
+		return
 	}
 
 	done := make(chan os.Signal, 1)

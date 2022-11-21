@@ -180,7 +180,6 @@ func (s *Service) trackUpstream(ctx context.Context) {
 		}
 
 		if !changed {
-			log.Infof("Machine %q, no diff in repo %q", s.Machine, s.Upstream)
 			continue
 		}
 

@@ -3,21 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/miekg/gitopper/proto"
 	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
 	"go.science.ru.nl/log"
 )
-
-/*
-   fmt.Printf("Body : %s", body)
-*/
 
 func atMachine(ctx *cli.Context) (string, error) {
 	at := ctx.Args().First()
@@ -30,25 +23,15 @@ func atMachine(ctx *cli.Context) (string, error) {
 	return at[1:], nil
 }
 
-func query(at, method string, args ...string) (body []byte, err error) {
-	c := http.Client{Timeout: time.Duration(1) * time.Second}
-	url := "http://" + at + ":8000/" + strings.Join(args, "/")
-	var resp *http.Response
-	switch method {
-	case "GET":
-		resp, err = c.Get(url)
-	case "POST":
-		resp, err = c.Post(url, "", nil)
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	return ioutil.ReadAll(resp.Body)
-}
-
 func main() {
 	app := &cli.App{
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "i",
+				Value: "",
+				Usage: "identity file",
+			},
+		},
 		Commands: []*cli.Command{
 			{
 				Name:    "list",
@@ -64,7 +47,7 @@ func main() {
 							if err != nil {
 								return err
 							}
-							body, err := query(at, "GET", "list", "machines")
+							body, err := querySSH(ctx, at, "/list/machine")
 							if err != nil {
 								return err
 							}
@@ -81,14 +64,21 @@ func main() {
 						},
 					},
 					{
-						Name:  "services",
-						Usage: "list services @machine",
+						Name:    "service",
+						Aliases: []string{"s"},
+						Usage:   "list service @machine [<service>]",
 						Action: func(ctx *cli.Context) error {
 							at, err := atMachine(ctx)
 							if err != nil {
 								return err
 							}
-							body, err := query(at, "GET", "list", "services")
+							var body []byte
+							service := ctx.Args().Get(1)
+							if service != "" {
+								body, err = querySSH(ctx, at, "/list/service", service)
+							} else {
+								body, err = querySSH(ctx, at, "/list/service")
+							}
 							if err != nil {
 								return err
 							}
@@ -100,33 +90,6 @@ func main() {
 							for i, ls := range ls.ListServices {
 								tbl.AddRow(i, ls.Service, ls.Hash, ls.State, ls.StateInfo, ls.StateChange)
 							}
-							tbl.Print()
-							return nil
-						},
-					},
-					{
-						Name:    "service",
-						Aliases: []string{"s"},
-						Usage:   "list service @machine <service>",
-						Action: func(ctx *cli.Context) error {
-							at, err := atMachine(ctx)
-							if err != nil {
-								return err
-							}
-							service := ctx.Args().Get(1)
-							if service == "" {
-								return fmt.Errorf("need service")
-							}
-							body, err := query(at, "GET", "list", "service", service)
-							if err != nil {
-								return err
-							}
-							ls := proto.ListService{}
-							if err := json.Unmarshal(body, &ls); err != nil {
-								return err
-							}
-							tbl := table.New("SERVICE", "HASH", "STATE", "INFO", "SINCE")
-							tbl.AddRow(ls.Service, ls.Hash, ls.State, ls.StateInfo, ls.StateChange)
 							tbl.Print()
 							return nil
 						},
@@ -151,7 +114,7 @@ func main() {
 							if service == "" {
 								return fmt.Errorf("need service")
 							}
-							_, err = query(at, "POST", "state", "freeze", service)
+							_, err = querySSH(ctx, at, "/state/freeze", service)
 							return err
 						},
 					},
@@ -168,7 +131,7 @@ func main() {
 							if service == "" {
 								return fmt.Errorf("need service")
 							}
-							_, err = query(at, "POST", "state", "unfreeze", service)
+							_, err = querySSH(ctx, at, "/state/unfreeze", service)
 							return err
 						},
 					},
@@ -189,7 +152,7 @@ func main() {
 							if hash == "" {
 								return fmt.Errorf("need hash to rollback to")
 							}
-							_, err = query(at, "POST", "state", "rollback", service, hash)
+							_, err = querySSH(ctx, at, "/state/rollback", service, hash)
 							return err
 						},
 					},

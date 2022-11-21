@@ -6,10 +6,12 @@ bit.
 The two main branches of use are `list` and `state`.
 
 ~~~
-./gitopperctl list machines @<host>
-./gitopperctl list services @<host>
-./gitopperctl list service  @<host> <service>
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper list machine @<host>
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper list service @<host>
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper list service  @<host> <service>
 ~~~
+
+The -i flag is mandatory, -p PORT is optional.
 
 In order:
 
@@ -20,7 +22,7 @@ In order:
 Each will output a simple table with the information:
 
 ~~~
-% ./gitopperctl list service @localhost grafana-server
+./gitopperctl list service @localhost grafana-server
 SERVICE         HASH                                      STATE  INFO  SINCE
 grafana-server  606eb576c1b91248e4c1c4cd0d720f27ac0deb70  OK           2022-11-18 13:29:44.824004812 +0000 UTC
 ~~~
@@ -32,20 +34,20 @@ grafana-server  606eb576c1b91248e4c1c4cd0d720f27ac0deb70  OK           2022-11-1
 Freezing (make it stop updating to the latest commit), until a unfreeze:
 
 ~~~
-./gitopperctl state freeze   @<host> <service>
-./gitopperctl state unfreeze @<host> <service>
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper freeze   @<host> <service>
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper state unfreeze @<host> <service>
 ~~~
 
 Rolling back to a previous commit, hash needs to be full length:
 
 ~~~
-./gitopperctl state rollback @<host> <service> <hash>
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper state rollback @<host> <service> <hash>
 ~~~
 
 And this can be abbreviated to:
 
 ~~~
-./gitopperctl s r @<host> <service> <hash>
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper s r @<host> <service> <hash>
 ~~~
 
 ## Example
@@ -55,7 +57,7 @@ This is a small example of this tool interacting with the daemon.
 - check current service
 
 ~~~
-% ./gitopperctl list service @localhost grafana-server
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper list service @localhost grafana-server
 SERVICE         HASH                                      STATE  INFO  SINCE
 grafana-server  606eb576c1b91248e4c1c4cd0d720f27ac0deb70  OK           0001-01-01 00:00:00 +0000 UTC
 ~~~
@@ -63,12 +65,12 @@ grafana-server  606eb576c1b91248e4c1c4cd0d720f27ac0deb70  OK           0001-01-0
 -  rollback
 
 ~~~
-% ./gitopperctl state rollback @localhost grafana-server 8df1b3db679253ba501d594de285cc3e9ed308ed
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper state rollback @localhost grafana-server 8df1b3db679253ba501d594de285cc3e9ed308ed
 ~~~
 
 - check
 ~~~
-% ./gitopperctl list service @localhost grafana-server
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper list service @localhost grafana-server
 SERVICE         HASH                                      STATE     INFO                                      SINCE
 grafana-server  606eb576c1b91248e4c1c4cd0d720f27ac0deb70  ROLLBACK  8df1b3db679253ba501d594de285cc3e9ed308ed  2022-11-18 13:28:42.619731556 +0000 UTC
 ~~~
@@ -76,7 +78,7 @@ grafana-server  606eb576c1b91248e4c1c4cd0d720f27ac0deb70  ROLLBACK  8df1b3db6792
 - check state, rollback done. Now state is FREEZE
 
 ~~~
-% ./gitopperctl list service @localhost grafana-server
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper list service @localhost grafana-server
 SERVICE         HASH                                      STATE   INFO                                                      SINCE
 grafana-server  8df1b3db679253ba501d594de285cc3e9ed308ed  FREEZE  ROLLBACK: 8df1b3db679253ba501d594de285cc3e9ed308ed  2022-11-18 13:29:17.92401403 +0000 UTC
 ~~~
@@ -84,13 +86,13 @@ grafana-server  8df1b3db679253ba501d594de285cc3e9ed308ed  FREEZE  ROLLBACK: 8df1
 - unfreeze and let it pick up changes again
 
 ~~~
-% ./gitopperctl state unfreeze @localhost grafana-server
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper state unfreeze @localhost grafana-server
 ~~~
 
 - check the service
 
 ~~~
-% ./gitopperctl list service @localhost grafana-server
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper list service @localhost grafana-server
 SERVICE         HASH                                      STATE  INFO  SINCE
 grafana-server  8df1b3db679253ba501d594de285cc3e9ed308ed  OK           2022-11-18 13:29:44.824004812 +0000 UTC
 ~~~
@@ -98,7 +100,7 @@ grafana-server  8df1b3db679253ba501d594de285cc3e9ed308ed  OK           2022-11-1
 - and updated to new hash
 
 ~~~
-% ./gitopperctl list service @localhost grafana-server
+./gitopperctl -i ~/.ssh/id_ed25519_gitopper list service @localhost grafana-server
 SERVICE         HASH                                      STATE  INFO  SINCE
 grafana-server  606eb576c1b91248e4c1c4cd0d720f27ac0deb70  OK           2022-11-18 13:29:44.824004812 +0000 UTC
 ~~~

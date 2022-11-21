@@ -39,6 +39,8 @@ From the doc:
 
 - Install grafana OSS version from the their website (just using this as a test case, nothing
   special here)
+- Generate an toy SSH key: `ssh-keygen -t ed25519` and make it write to an `id_ed25519_gitopper` file.
+- Put the path to the *PUBLIC* key (ending in .pub) in the `[[keys]]` section in config.toml
 - Compile the gitopper binary: `go build`
 - Start as root: `sudo ./gitopper -c config.toml -h grafana.atoom.net`
 
@@ -52,7 +54,7 @@ grafana restart (not even sure grafana actually needs a restart).
 Then with cmd/gitopperctl/gitopperctl you can query the server:
 
 ~~~
-% ./gitopperctl list services @localhost
+./gitopperctl -i <path-to-your-key> list service @localhost
 #  SERVICE         HASH                                     STATE  INFO  CHANGED
 0  grafana-server  606eb576c1b91248e4c1c4cd0d720f27ac0deb70 OK           Fri, 18 Nov 2022 09:14:52 UTC
 ~~~
@@ -83,6 +85,10 @@ becomes BROKEN.
 upstream = "https://github.com/miekg/blah-origin"  # repository where to download from
 mount = "/tmp"                                     # directory where to download to, mount+service is used as path
 
+# ssh keys that are allowed in via authorized keys
+[[keys]]
+path = "/home/bla/.ssh/key.pub"
+
 # each managed service has an entry like this
 [[services]]
 machine = "grafana.atoom.net" # hostname of the machine, so a host knows when to pick this up.
@@ -104,17 +110,22 @@ Moving to a new user, will break git pull, with an error like 'dubious ownership
 you want a different owner for a service, it's best to change the mount as well so you get a new
 repo. Gitopper is currently not smart enough to detect this and fix things on the fly.
 
-## REST Interface
+## Interface
 
-See proto/proto.go for the defined interface. Interaction is REST, thus JSON. You can
+Gitopper opens two ports: 9222 for metrics and 2222 for the rest-protocol-over-SSH. For any
+interaction with gitopper over this port you're key must be configured for it.
+
+The following services are implemented:
 
 * List all defined machines.
 * List services run on the machine.
 * List a specific service.
-
 * Freeze a service to the current git commit.
 * Unfreeze a service, i.e. to let it pull again.
 * Rollback a service to a specific commit.
+
+For each of these the client will execute a "command" and will parse the returned json into a nice
+table.
 
 ## Metrics
 
@@ -125,7 +136,7 @@ The following metrics are exported:
 * gitopper_machine_git_errors_total - total number of errors when running git.
 * gitopper_machine_git_ops_total - total number of git runs.
 
-Metrics are available under the /metrics endpoint.
+Metrics are available under the /metrics endpoint on port 9222.
 
 ## Exit Code
 
@@ -157,15 +168,17 @@ the other services must have their own subdirectories, gitopper needs one too.
 The gitopper service self is *also* added to the managed services which you can inspect with
 gitopperctl.
 
+Any keys that have *relative* paths, will also be changed to key inside this Git managed directory
+and pick up keys *from that repo*.
+
 ## Client
 
 A client is included in cmd/gitopperctl. It has its own README.md.
 
 ## Authentication
 
-TODO...? Some plugins based solution?
+Authentication uses SSH, so it fits in with the rest of the infrastructure.
 
 ## TODO
 
-* Authentication for destructive action
-* TLS (certmagic?)
+- Include systemd service file.

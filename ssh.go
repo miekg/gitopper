@@ -66,36 +66,43 @@ func ListMachines(c Config, s ssh.Session) {
 }
 
 func ListService(c Config, s ssh.Session) {
-	ls := proto.ListServices{
-		ListServices: make([]proto.ListService, len(c.Services)),
-	}
+	ls := proto.ListServices{ListServices: []proto.ListService{}}
+
 	target := ""
 	if len(s.Command()) > 1 {
 		target = s.Command()[1]
 	}
-	for i, service := range c.Services {
+	for _, service := range c.Services {
+		if !service.forMe(flagHosts) {
+			continue
+		}
 		state, info := service.State()
 		switch {
 		case target == "":
-			ls.ListServices[i] = proto.ListService{
+			ls.ListServices = append(ls.ListServices, proto.ListService{
 				Service:     service.Service,
 				Hash:        service.Hash(),
 				State:       state.String(),
 				StateInfo:   info,
 				StateChange: service.Change().Format(time.RFC1123),
-			}
+			})
 		case target != "":
 			if service.Service == target {
-				ls.ListServices[i] = proto.ListService{
+				ls.ListServices = append(ls.ListServices, proto.ListService{
 					Service:     service.Service,
 					Hash:        service.Hash(),
 					State:       state.String(),
 					StateInfo:   info,
 					StateChange: service.Change().Format(time.RFC1123),
-				}
+				})
 				break
 			}
 		}
+	}
+	if len(ls.ListServices) == 0 {
+		io.WriteString(s, http.StatusText(http.StatusNotFound))
+		s.Exit(http.StatusNotFound)
+		return
 	}
 	data, err := json.Marshal(ls)
 	writeAndExit(s, data, err)
@@ -111,8 +118,10 @@ func freezeStateService(c Config, s ssh.Session, state State) {
 		return
 	}
 	target := s.Command()[1]
-	println("T", target)
 	for _, service := range c.Services {
+		if !service.forMe(flagHosts) {
+			continue
+		}
 		if service.Service == target {
 			service.SetState(state, "")
 			log.Infof("Machine %q, service %q set to %s", service.Machine, service.Service, state)
@@ -138,6 +147,9 @@ func RollbackService(c Config, s ssh.Session) {
 	}
 
 	for _, service := range c.Services {
+		if !service.forMe(flagHosts) {
+			continue
+		}
 		if service.Service == target {
 			service.SetState(StateRollback, hash)
 			log.Infof("Machine %q, service %q set to %s", service.Machine, service.Service, StateRollback)

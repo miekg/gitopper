@@ -49,7 +49,7 @@ func main() {
 	// bootstrapping
 	self := selfService(*flagUpstream, *flagBranch, *flagMount, *flagDir)
 	if self != nil {
-		log.Infof("Bootstapping from repo %q", *flagUpstream)
+		log.Infof("Bootstapping from repo %q and adding service %q for %q", *flagUpstream, self.Service, self.Machine)
 		gc := self.newGitCmd()
 		err := gc.Checkout()
 		if err != nil {
@@ -78,12 +78,12 @@ func main() {
 
 	allowed := make([]ssh.PublicKey, len(c.Keys))
 	for i, k := range c.Keys {
-		if !path.IsAbs(k.Path) && self != nil {
+		if !path.IsAbs(k.Path) && self != nil { // bootstrapping
 			newpath := path.Join(path.Join(path.Join(self.Mount, self.Service), *flagDir), k.Path)
-			log.Infof("Setting relative key path %s to %s", k.Path, newpath)
 			k.Path = newpath
 		}
 
+		log.Infof("Reading public key %q", k.Path)
 		data, err := ioutil.ReadFile(k.Path)
 		if err != nil {
 			log.Fatal(err)
@@ -116,7 +116,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
-	log.Infof("Launched servers on port %s and %s", *flagSAddr, *flagMAddr)
+	log.Infof("Launched servers on port %s and %s from machines: %v", *flagSAddr, *flagMAddr, flagHosts)
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()

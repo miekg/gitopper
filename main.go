@@ -124,11 +124,13 @@ func main() {
 	pkg := ospkg.New()
 
 	var wg sync.WaitGroup
+	servCnt := 0
 	for _, serv := range c.Services {
 		if !serv.forMe(flagHosts) {
 			continue
 		}
 
+		servCnt++
 		s := serv.merge(c.Global)
 		log.Infof("Machine %q %q", s.Machine, s.Upstream)
 		gc := s.newGitCmd()
@@ -173,6 +175,11 @@ func main() {
 			defer wg.Done()
 			s.trackUpstream(ctx)
 		}()
+	}
+
+	if servCnt == 0 {
+		log.Warningf("No services found for machine: %v, exiting", flagHosts)
+		return
 	}
 
 	done := make(chan os.Signal, 1)

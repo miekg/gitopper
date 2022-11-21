@@ -171,6 +171,10 @@ gitopperctl.
 Any keys that have *relative* paths, will also be changed to key inside this Git managed directory
 and pick up keys *from that repo*.
 
+The `-P` flag can be given to pull the repository even if it already exists, sometimes you need to
+the newest version to properly bootstrap. For normal services the "git pull" routine will
+automatically rectify it and restart the service.
+
 ## Client
 
 A client is included in cmd/gitopperctl. It has its own README.md.

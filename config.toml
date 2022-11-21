@@ -3,7 +3,7 @@ upstream = "https://github.com/miekg/blah-origin"  # repository where to downloa
 mount = "/tmp"                                # directory where to download to, mount+service is used as path
 
 [[keys]]
-path = "/local/home/miek/.ssh/id_ed25519_gitopper.pub"
+path = "keys/miek_id_ed25519_gitopper.pub"
 
 [[services]]
 machine = "grafana.atoom.net"

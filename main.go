@@ -31,6 +31,7 @@ var (
 	flagDir      = flag.String("D", "gitopper", "[bootstrapping] directory to sparse checkout")
 	flagBranch   = flag.String("B", "main", "[bootstrapping] check out in this branch")
 	flagMount    = flag.String("M", "", "[bootstrapping] check out into this directory, -c (and relative key paths ) are relative to this dir")
+	flagPull     = flag.Bool("P", false, "[boostrapping] pull (update) the git repo to the newest version before starting")
 )
 
 func main() {
@@ -54,6 +55,11 @@ func main() {
 		err := gc.Checkout()
 		if err != nil {
 			log.Fatalf("Machine %q, error pulling repo %q: %s", self.Machine, self.Upstream, err)
+		}
+		if *flagPull {
+			if _, err := gc.Pull(); err != nil {
+				log.Fatalf("Machine %q, error pulling repo %q: %s", self.Machine, self.Upstream, err)
+			}
 		}
 		*flagConfig = path.Join(path.Join(path.Join(self.Mount, self.Service), *flagDir), *flagConfig)
 		log.Infof("Setting config to %s", *flagConfig)

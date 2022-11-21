@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gliderlabs/ssh"
 	"github.com/miekg/gitopper/osutil"
@@ -13,16 +14,11 @@ import (
 	"go.science.ru.nl/log"
 )
 
-var sshRoutes = map[string]func(Config, ssh.Session){
-	"/list/machines": ListMachines,
-	"/state/freeze/": RollbackService,
-}
-
 func newSSHRouter(c Config) {
-	// generate persistent key, or ignore client side.
 	ssh.Handle(func(s ssh.Session) {
 		if len(s.Command()) == 0 {
-			// exit code
+			io.WriteString(s, http.StatusText(http.StatusBadRequest))
+			s.Exit(http.StatusBadRequest)
 			return
 		}
 		for prefix, f := range sshRoutes {
@@ -35,8 +31,24 @@ func newSSHRouter(c Config) {
 		io.WriteString(s, http.StatusText(http.StatusNotFound))
 		s.Exit(http.StatusNotFound)
 	})
+}
 
-	// parse pub keys in start up into Config
+var sshRoutes = map[string]func(Config, ssh.Session){
+	"/list/machines":   ListMachines,
+	"/list/service":    ListService,
+	"/state/freeze/":   FreezeService,
+	"/state/unfreeze/": UnfreezeService,
+	"/state/rollback/": RollbackService,
+}
+
+func writeAndExit(s ssh.Session, data []byte, err error) {
+	if err != nil {
+		io.WriteString(s, http.StatusText(http.StatusInternalServerError))
+		s.Exit(http.StatusInternalServerError)
+		return
+	}
+	s.Write(data)
+	s.Exit(0)
 }
 
 func ListMachines(c Config, s ssh.Session) {
@@ -50,30 +62,74 @@ func ListMachines(c Config, s ssh.Session) {
 		}
 	}
 	data, err := json.Marshal(lm)
-	if err != nil {
-		io.WriteString(s, http.StatusText(http.StatusInternalServerError))
-		s.Exit(http.StatusInternalServerError)
+	writeAndExit(s, data, err)
+}
+
+func ListService(c Config, s ssh.Session) {
+	ls := proto.ListServices{
+		ListServices: make([]proto.ListService, len(c.Services)),
+	}
+	target := ""
+	if len(s.Command()) > 0 {
+		target = s.Command()[1]
+	}
+
+	for i, service := range c.Services {
+		if target != "" && service.Service == target {
+			state, info := service.State()
+			ls.ListServices[i] = proto.ListService{
+				Service:     service.Service,
+				Hash:        service.Hash(),
+				State:       state.String(),
+				StateInfo:   info,
+				StateChange: service.Change().Format(time.RFC1123),
+			}
+			break
+		}
+	}
+	data, err := json.Marshal(ls)
+	writeAndExit(s, data, err)
+}
+
+func FreezeService(c Config, s ssh.Session) { freezeStateService(c, s, StateFreeze) }
+
+func UnfreezeService(c Config, s ssh.Session) { freezeStateService(c, s, StateOK) }
+
+func freezeStateService(c Config, s ssh.Session, state State) {
+	if len(s.Command()) < 1 {
+		s.Exit(http.StatusNotAcceptable)
 		return
 	}
-	s.Write(data)
+	target := s.Command()[1]
+	for _, service := range c.Services {
+		if service.Service == target {
+			service.SetState(state, "")
+			log.Infof("Machine %q, service %q set to %s", service.Machine, service.Service, state)
+			io.WriteString(s, http.StatusText(http.StatusOK))
+			s.Exit(0)
+			return
+		}
+	}
+	io.WriteString(s, http.StatusText(http.StatusNotFound))
+	s.Exit(http.StatusNotFound)
 }
 
 func RollbackService(c Config, s ssh.Session) {
 	if len(s.Command()) < 3 {
 		return
 	}
-	service := s.Command()[1]
+	target := s.Command()[1]
 	hash := s.Command()[2]
 	if _, err := hex.DecodeString(hash); err != nil {
 		io.WriteString(s, http.StatusText(http.StatusNotAcceptable)+", not a valid git hash: "+hash)
-		s.Exit(http.StatusNotFound)
+		s.Exit(http.StatusNotAcceptable)
 		return
 	}
 
-	for _, serv := range c.Services {
-		if serv.Service == service {
-			serv.SetState(StateRollback, hash)
-			log.Infof("Machine %q, service %q set to %s", serv.Machine, serv.Service, StateRollback)
+	for _, service := range c.Services {
+		if service.Service == target {
+			service.SetState(StateRollback, hash)
+			log.Infof("Machine %q, service %q set to %s", service.Machine, service.Service, StateRollback)
 			io.WriteString(s, http.StatusText(http.StatusOK))
 			s.Exit(0)
 			return

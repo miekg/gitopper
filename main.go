@@ -15,13 +15,15 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/miekg/gitopper/ospkg"
 	"github.com/miekg/gitopper/osutil"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.science.ru.nl/log"
 )
 
 var (
 	flagHosts   sliceFlag
 	flagConfig  = flag.String("c", "", "config file to read")
-	flagAddr    = flag.String("a", ":8000", "address to listen on")
+	flagSAddr   = flag.String("s", ":2222", "ssh address to listen on")
+	flagMAddr   = flag.String("m", ":9222", "http metrics address to listen on")
 	flagDebug   = flag.Bool("d", false, "enable debug logging")
 	flagRestart = flag.Bool("r", false, "send SIGHUP when config changes")
 	// bootstrap flags
@@ -76,7 +78,8 @@ func main() {
 
 	newSSHRouter(c)
 	go func() {
-		ssh.ListenAndServe(*flagAddr, nil,
+		// TODO: Interrupt SSH serving through context cancellation.
+		ssh.ListenAndServe(*flagSAddr, nil,
 			ssh.PublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
 				data, _ := ioutil.ReadFile("/home/miek/.ssh/id_ed25519.pub")
 				allowed, _, _, _, _ := ssh.ParseAuthorizedKey(data)
@@ -84,13 +87,14 @@ func main() {
 			}),
 		)
 	}()
+	http.Handle("/metrics", promhttp.Handler())
 	go func() {
 		// TODO: Interrupt HTTP serving through context cancellation.
-		if err := http.ListenAndServe(*flagAddr, newHTTPRouter()); err != nil {
+		if err := http.ListenAndServe(*flagMAddr, nil); err != nil {
 			log.Fatal(err)
 		}
 	}()
-	log.Infof("Launched server on port %s", *flagAddr)
+	log.Infof("Launched servers on port %s and %s", *flagSAddr, *flagMAddr)
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()

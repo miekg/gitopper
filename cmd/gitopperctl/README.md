@@ -6,8 +6,8 @@ bit.
 The two main branches of use are `list` and `state`.
 
 ~~~
-./gitopperctl list machines @<host>
-./gitopperctl list services @<host>
+./gitopperctl list machine @<host>
+./gitopperctl list service @<host>
 ./gitopperctl list service  @<host> <service>
 ~~~
 

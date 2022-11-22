@@ -11,7 +11,8 @@ The two main branches of use are `list` and `state`.
 ./gitopperctl -i ~/.ssh/id_ed25519_gitopper list service  @<host> <service>
 ~~~
 
-The -i flag is mandatory, -p PORT is optional.
+The -i flag is mandatory, -p PORT is optional. With the -m flag (machine readable) you get the JSON
+from the server.
 
 In order:
 

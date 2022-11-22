@@ -31,6 +31,10 @@ func main() {
 				Value: "",
 				Usage: "identity file",
 			},
+			&cli.BoolFlag{
+				Name:  "m",
+				Usage: "machine readable output",
+			},
 		},
 		Commands: []*cli.Command{
 			{
@@ -54,6 +58,10 @@ func main() {
 							lm := proto.ListMachines{}
 							if err := json.Unmarshal(body, &lm); err != nil {
 								return err
+							}
+							if ctx.Bool("m") {
+								fmt.Print(string(body))
+								return nil
 							}
 							tbl := table.New("#", "MACHINE", "ACTUAL")
 							for i, m := range lm.ListMachines {
@@ -85,6 +93,10 @@ func main() {
 							ls := proto.ListServices{}
 							if err := json.Unmarshal(body, &ls); err != nil {
 								return err
+							}
+							if ctx.Bool("m") {
+								fmt.Print(string(body))
+								return nil
 							}
 							tbl := table.New("#", "SERVICE", "HASH", "STATE", "INFO", "SINCE")
 							for i, ls := range ls.ListServices {

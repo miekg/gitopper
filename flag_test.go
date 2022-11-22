@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/miekg/gitopper/osutil"
 )
 
 func TestSliceFlag(t *testing.T) {
@@ -36,5 +37,15 @@ func TestSliceFlag(t *testing.T) {
 		if got, want := f.String(), test.in; got != want {
 			t.Errorf("after f.Set(%q), f.String() = %q, want %q", test.in, got, want)
 		}
+	}
+}
+
+func TestLocalHostname(t *testing.T) {
+	host := osutil.Hostname()
+	exec := ExecContext{Hosts: []string{host}}
+	exec.RegisterFlags(nil)
+
+	if exec.Hosts[0] != host {
+		t.Fatalf("got %s for host, want %s", exec.Hosts[0], host)
 	}
 }

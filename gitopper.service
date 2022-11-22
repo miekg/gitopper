@@ -1,0 +1,12 @@
+[Unit]
+Description=Gitopper Gitops
+Documentation=https://github.com/miekg/gitopper
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/gitopper -c /etc/gitopper/config.toml
+ExecReload=/bin/kill -SIGHUP $MAINPID
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

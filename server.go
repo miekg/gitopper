@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -142,11 +143,12 @@ func (s *Service) trackUpstream(ctx context.Context) {
 	gc := s.newGitCmd()
 
 	log.Infof("Launched tracking routine for %q/%q", s.Machine, s.Service)
+	state, info := s.State()
+	s.SetState(state, info)
+	s.SetBoot()
 
 	for {
 		s.SetHash(gc.Hash())
-		state, info := s.State()
-		s.SetState(state, info)
 
 		select {
 		case <-time.After(Duration):
@@ -209,6 +211,32 @@ func (s *Service) systemctl() error {
 	cmd := exec.CommandContext(ctx, "systemctl", s.Action, s.Service)
 	log.Infof("running %v", cmd.Args)
 	return cmd.Run()
+}
+
+// Boot returns the start time of the service. If that isn't available because there isn't a Service in s, then we
+// return the kernel's boot time (i.e. when the system we started).
+func (s *Service) SetBoot() {
+	ctx := context.TODO()
+	cmd := &exec.Cmd{}
+	if s.Service != "" {
+		cmd = exec.CommandContext(ctx, "systemctl", "show", "--property=ExecMainStartTimestamp", s.Service)
+	} else {
+		cmd = exec.CommandContext(ctx, "systemctl", "show", "--property=KernelTimestamp")
+	}
+	log.Infof("running %v", cmd.Args)
+	out, err := cmd.Output()
+	if err != nil {
+		return
+	}
+
+	out = bytes.TrimSpace(out)
+	// Testing show this is the string returned: Mon 2022-11-21 09:39:59 CET, so parse that into a time.Time
+	t, err := time.Parse("Mon 2006-01-02 15:04:05 MST", string(out))
+	if err == nil { // on succes
+		s.Lock()
+		defer s.Unlock()
+		s.stateStamp = t.UTC()
+	}
 }
 
 // bindmount sets up the bind mount, the return integer returns how many mounts were performed.

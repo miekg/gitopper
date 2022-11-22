@@ -14,7 +14,8 @@ func (s *sliceFlag) String() string {
 	}
 	return strings.Join(*s.Data, ",")
 }
+
 func (s *sliceFlag) Set(v string) error {
-	*s.Data = strings.Split(v, ",")
+	*s.Data = append(*s.Data, strings.Split(v, ",")...)
 	return nil
 }

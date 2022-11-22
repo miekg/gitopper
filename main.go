@@ -38,7 +38,7 @@ func (exec *ExecContext) RegisterFlags(fs *flag.FlagSet) {
 	if fs == nil {
 		fs = flag.CommandLine
 	}
-	fs.Var(&sliceFlag{&exec.Hosts}, "h", "hosts to impersonate, can be given multiple times, $HOSTNAME is included by default")
+	fs.Var(&sliceFlag{&exec.Hosts}, "h", "hosts (comma separated) to impersonate, local hostname is included by default")
 	fs.StringVar(&exec.ConfigSource, "c", "", "config file to read")
 	fs.StringVar(&exec.SAddr, "s", ":2222", "ssh address to listen on")
 	fs.StringVar(&exec.MAddr, "m", ":9222", "http metrics address to listen on")

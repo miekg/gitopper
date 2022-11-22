@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"sync"
 	"time"
 
@@ -78,7 +79,10 @@ func (s *Service) SetState(st State, info string) {
 	s.state = st
 	s.stateInfo = info
 
-	metricServiceHash.WithLabelValues(s.Service, s.hash, s.state.String()).Set(1)
+	hashNum, _ := strconv.ParseFloat("0x"+s.hash+".p1", 64)
+	metricServiceHash.WithLabelValues(s.Service).Set(hashNum)
+	metricServiceState.WithLabelValues(s.Service).Set(float64(s.state))
+	metricServiceTimestamp.WithLabelValues(s.Service).Set(float64(s.stateStamp.Unix()))
 }
 
 func (s *Service) Hash() string {
@@ -142,6 +146,7 @@ func (s *Service) trackUpstream(ctx context.Context) {
 	for {
 		s.SetHash(gc.Hash())
 		state, info := s.State()
+		s.SetState(state, info)
 
 		select {
 		case <-time.After(Duration):

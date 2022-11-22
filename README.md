@@ -131,8 +131,9 @@ table.
 
 The following metrics are exported:
 
-* gitopper_service_info{"service", "hash", "state"}, where 'hash' is unbounded, but we really care
-  about that value.
+* gitopper_service_hash{"service"} \<hash\>
+* gitopper_service_state{"service"} \<state\>
+* gitopper_service_change_timestamp{"service"} \<epoch\>
 * gitopper_machine_git_errors_total - total number of errors when running git.
 * gitopper_machine_git_ops_total - total number of git runs.
 

@@ -37,17 +37,17 @@ From the doc:
 
 ## Quick Start
 
+- Compile the gitopper binary: `go build`
 - Install grafana OSS version from the their website (just using this as a test case, nothing
   special here)
 - Generate an toy SSH key: `ssh-keygen -t ed25519` and make it write to an `id_ed25519_gitopper` file.
-- Put the path to the *PUBLIC* key (ending in .pub) in the `[[keys]]` section in config.toml
-- Compile the gitopper binary: `go build`
+- Put the path to the *PUBLIC* key (ending in .pub) in the `[keys]` section in config.toml
 - Start as root: `sudo ./gitopper -c config.toml -h grafana.atoom.net`
 
 And things should work then. I.e. in /etc/grafana you should see the content of the
 *miekg/blah-origin* repository.
 
-The checked out git repo in /tmp/grafana1/grafana-server should _only_ contain the grafana directory
+The checked out git repo in /tmp/grafana-server should _only_ contain the grafana directory
 thanks to the sparse checkout. Changes made to the `crap` subdir in that repo do not trigger a
 grafana restart (not even sure grafana actually needs a restart).
 
@@ -97,9 +97,10 @@ service = "grafana-server"    # service identifier, if it's used by systemd it m
 package = "grafana"           # as used by package mgmt, may be empty (not implemented yet)
 user = "grafana"              # do the check out with this user
 action = "reload"             # call systemctl <action> <service> when the git repo changes, may be empty
-mount = "/tmp/grafana1"       # where to put the downloaded repo
+mount = "/tmp/grafana1"       # where to put the downloaded repo, overrides the global one
+# what directories from the repo to mount under the local directories
 dirs = [
-    { local = "/etc/grafana", link = "grafana/etc" },
+    { local = "/etc/grafana", link = "grafana/etc" },   # grafana/etc *in the repo* should be mounted under /etc/grafana
     { local = "/var/lib/grafana/dashboards", link = "grafana/dashboards" }
 ]
 ~~~

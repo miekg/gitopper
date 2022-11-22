@@ -119,15 +119,15 @@ func run(exec *ExecContext) error {
 		c.Services = append(c.Services, self)
 	}
 
-	allowed := make([]ssh.PublicKey, len(c.Keys))
-	for i, k := range c.Keys {
-		if !path.IsAbs(k.Path) && self != nil { // bootstrapping
-			newpath := path.Join(path.Join(path.Join(self.Mount, self.Service), exec.Dir), k.Path)
-			k.Path = newpath
+	allowed := make([]ssh.PublicKey, len(c.Keys.Path))
+	for i, p := range c.Keys.Path {
+		if !path.IsAbs(p) && self != nil { // bootstrapping
+			newpath := path.Join(path.Join(path.Join(self.Mount, self.Service), exec.Dir), p)
+			p = newpath
 		}
 
-		log.Infof("Reading public key %q", k.Path)
-		data, err := ioutil.ReadFile(k.Path)
+		log.Infof("Reading public key %q", p)
+		data, err := ioutil.ReadFile(p)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -159,7 +159,7 @@ func run(exec *ExecContext) error {
 			log.Fatal(err)
 		}
 	}()
-	log.Infof("Launched servers on port %s and %s from machines: %v", exec.SAddr, exec.MAddr, exec.Hosts)
+	log.Infof("Launched servers on port %s (ssh) and %s (metrics) for machines: %v, %d public keys loaded", exec.SAddr, exec.MAddr, exec.Hosts, len(c.Keys.Path))
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()

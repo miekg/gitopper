@@ -86,8 +86,8 @@ upstream = "https://github.com/miekg/blah-origin"  # repository where to downloa
 mount = "/tmp"                                     # directory where to download to, mount+service is used as path
 
 # ssh keys that are allowed in via authorized keys
-[[keys]]
-path = "/home/bla/.ssh/key.pub"
+[keys]
+path = ["/home/bla/.ssh/key.pub"]
 
 # each managed service has an entry like this
 [[services]]

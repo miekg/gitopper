@@ -1,19 +1,22 @@
 [global]
 upstream = "https://github.com/miekg/blah-origin"  # repository where to download from
-mount = "/tmp"                                # directory where to download to, mount+service is used as path
+mount = "/tmp"                                     # directory where to download to, mount+service is used as path
 
-[[keys]]
-path = "keys/miek_id_ed25519_gitopper.pub"
+[keys]
+path = [
+	"keys/miek_id_ed25519_gitopper.pub",
+	"/local/home/miek/.ssh/id_ed25519_gitopper.pub",
+]
 
 [[services]]
 machine = "grafana.atoom.net"
 branch = "main"
 service = "grafana-server" # as used in systemd
 user = "grafana"
-package = "grafana"  # as used by package mgmt
-action = "restart"    # what to do when files are changed
-mount = "/tmp/grafana1" # where to download the repo - we don't care
+package = "grafana"     # as used by package mgmt
+action = "restart"      # what to do when files are changed
+mount = "/tmp/grafana1" # override mount here
 dirs = [
-    { local = "/etc/grafana", link = "grafana/etc" },
-    { local = "/var/lib/grafana/dashboards", link = "grafana/dashboards" }
+	{ local = "/etc/grafana", link = "grafana/etc" },
+	{ local = "/var/lib/grafana/dashboards", link = "grafana/dashboards" }
 ]

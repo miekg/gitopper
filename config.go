@@ -17,13 +17,12 @@ import (
 // Config holds the gitopper config file. It's is updated every so often to pick up new changes.
 type Config struct {
 	Global   *Service
-	Keys     []Key
+	Keys     Key
 	Services []*Service
 }
 
-// Key holds the meta data to find public keys.
 type Key struct {
-	Path string
+	Path []string
 }
 
 func parseConfig(doc []byte) (c Config, err error) {
@@ -35,7 +34,7 @@ func parseConfig(doc []byte) (c Config, err error) {
 
 // Valid checks the config in c and returns nil of all mandatory fields have been set.
 func (c Config) Valid() error {
-	if len(c.Keys) == 0 {
+	if len(c.Keys.Path) == 0 {
 		return fmt.Errorf("at least one public key should be specified")
 	}
 

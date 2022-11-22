@@ -26,7 +26,7 @@ type Service struct {
 	Package  string // The package that might need installing.
 	User     string // what user to use for checking out the repo.
 	Action   string // The systemd action to take when files have changed.
-	Mount    string // Together with Service this is the directory where the sparse git repo is checked out.
+	Mount    string // Concatenated with server.Service this will be the directory where the git repo is checked out.
 	Dirs     []Dir  // How to map our local directories to the git repository.
 
 	state        State
@@ -248,7 +248,6 @@ func (s *Service) bindmount() (int, error) {
 			return 0, fmt.Errorf("failed to mount %q: %s", gitdir, err)
 		}
 		mounted++
-
 	}
 	return mounted, nil
 }

@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -21,6 +22,7 @@ import (
 )
 
 type ExecContext struct {
+	// Configuration
 	Hosts        []string
 	ConfigSource string
 	SAddr        string
@@ -32,6 +34,9 @@ type ExecContext struct {
 	Branch       string
 	Mount        string
 	Pull         bool
+
+	// Runtime State
+	HTTPMux *http.ServeMux
 }
 
 func (exec *ExecContext) RegisterFlags(fs *flag.FlagSet) {
@@ -152,21 +157,38 @@ func run(exec *ExecContext) error {
 			}),
 		)
 	}()
-	http.Handle("/metrics", promhttp.Handler())
-	go func() {
-		// TODO: Interrupt HTTP serving through context cancellation.
-		if err := http.ListenAndServe(exec.MAddr, nil); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	log.Infof("Launched servers on port %s (ssh) and %s (metrics) for machines: %v, %d public keys loaded", exec.SAddr, exec.MAddr, exec.Hosts, len(c.Keys.Path))
-
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
-
+	var workerWG, controllerWG sync.WaitGroup
+	defer controllerWG.Wait()
+	exec.HTTPMux.Handle("/metrics", promhttp.Handler())
+	{ // TODO: Refactor extract this block.
+		ln, err := net.Listen("tcp", exec.MAddr)
+		if err != nil {
+			return err
+		}
+		srv := &http.Server{
+			Addr:    exec.MAddr,
+			Handler: exec.HTTPMux,
+		}
+		go func() {
+			workerWG.Wait()              // Unblocks upon context cancellation and workers finish.
+			srv.Shutdown(context.TODO()) // TODO: Derive context tree more carefully from root.
+		}()
+		controllerWG.Add(1)
+		go func() {
+			defer controllerWG.Done()
+			err := srv.Serve(ln)
+			switch {
+			case err == nil:
+			case errors.Is(err, http.ErrServerClosed):
+			default:
+				log.Fatal(err)
+			}
+		}()
+	}
+	log.Infof("Launched servers on port %s (ssh) and %s (metrics) for machines: %v, %d public keys loaded", exec.SAddr, exec.MAddr, exec.Hosts, len(c.Keys.Path))
 	pkg := ospkg.New()
-
-	var wg sync.WaitGroup
 	servCnt := 0
 	for _, serv := range c.Services {
 		if !serv.forMe(exec.Hosts) {
@@ -213,9 +235,9 @@ func run(exec *ExecContext) error {
 			}
 		}
 
-		wg.Add(1)
+		workerWG.Add(1)
 		go func() {
-			defer wg.Done()
+			defer workerWG.Done()
 			s.trackUpstream(ctx)
 		}()
 	}
@@ -228,16 +250,16 @@ func run(exec *ExecContext) error {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	if exec.Restart {
-		wg.Add(1)
+		workerWG.Add(1)
 		go func() {
-			defer wg.Done()
+			defer workerWG.Done()
 			trackConfig(ctx, exec.ConfigSource, done)
 		}()
 	}
 	hup := make(chan struct{})
-	wg.Add(1)
+	workerWG.Add(1)
 	go func() {
-		defer wg.Done()
+		defer workerWG.Done()
 		select {
 		case s := <-done:
 			cancel()
@@ -247,7 +269,7 @@ func run(exec *ExecContext) error {
 		case <-ctx.Done():
 		}
 	}()
-	wg.Wait()
+	workerWG.Wait()
 	select {
 	case <-hup:
 		return ErrHUP
@@ -257,7 +279,10 @@ func run(exec *ExecContext) error {
 }
 
 func main() {
-	exec := ExecContext{Hosts: []string{osutil.Hostname()}}
+	exec := ExecContext{
+		Hosts:   []string{osutil.Hostname()},
+		HTTPMux: http.NewServeMux(),
+	}
 	exec.RegisterFlags(nil)
 
 	flag.Parse()

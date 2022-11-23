@@ -116,23 +116,28 @@ func UnfreezeService(c Config, s ssh.Session, hosts []string) {
 	freezeStateService(c, s, StateOK, hosts)
 }
 
+func myServices(c Config, target string, hosts []string) []*Service {
+	var s []*Service
+	for _, serv := range c.Services {
+		if serv.forMe(hosts) && serv.Service == target {
+			s = append(s, serv)
+		}
+	}
+	return s
+}
+
 func freezeStateService(c Config, s ssh.Session, state State, hosts []string) {
 	if len(s.Command()) < 2 {
 		s.Exit(http.StatusNotAcceptable)
 		return
 	}
 	target := s.Command()[1]
-	for _, service := range c.Services {
-		if !service.forMe(hosts) {
-			continue
-		}
-		if service.Service == target {
-			service.SetState(state, "")
-			log.Infof("Machine %q, service %q set to %s", service.Machine, service.Service, state)
-			io.WriteString(s, http.StatusText(http.StatusOK))
-			s.Exit(0)
-			return
-		}
+	for _, serv := range myServices(c, target, hosts) {
+		serv.SetState(state, "")
+		log.Infof("Machine %q, service %q set to %s", serv.Machine, serv.Service, state)
+		io.WriteString(s, http.StatusText(http.StatusOK))
+		s.Exit(0)
+		return
 	}
 	io.WriteString(s, http.StatusText(http.StatusNotFound))
 	s.Exit(http.StatusNotFound)
@@ -150,17 +155,12 @@ func RollbackService(c Config, s ssh.Session, hosts []string) {
 		return
 	}
 
-	for _, service := range c.Services {
-		if !service.forMe(hosts) {
-			continue
-		}
-		if service.Service == target {
-			service.SetState(StateRollback, hash)
-			log.Infof("Machine %q, service %q set to %s", service.Machine, service.Service, StateRollback)
-			io.WriteString(s, http.StatusText(http.StatusOK))
-			s.Exit(0)
-			return
-		}
+	for _, serv := range myServices(c, target, hosts) {
+		serv.SetState(StateRollback, hash)
+		log.Infof("Machine %q, service %q set to %s", serv.Machine, serv.Service, StateRollback)
+		io.WriteString(s, http.StatusText(http.StatusOK))
+		s.Exit(0)
+		return
 	}
 	io.WriteString(s, http.StatusText(http.StatusNotFound))
 	s.Exit(http.StatusNotFound)

@@ -74,7 +74,76 @@ func (err *RepoPullError) Error() string {
 	return fmt.Sprintf("Machine %q, error pulling repo %q: %s", err.Machine, err.Upstream, err.Underlying)
 }
 
-func (err *RepoPullError) Unwrap() error { return err.Underlying }
+func (err *RepoPullError) Unwrap() error {
+	if err == nil {
+		return nil
+	}
+	return err.Underlying
+}
+
+func serveMonitoring(exec *ExecContext, controllerWG, workerWG *sync.WaitGroup) error {
+	exec.HTTPMux.Handle("/metrics", promhttp.Handler())
+	ln, err := net.Listen("tcp", exec.MAddr)
+	if err != nil {
+		return err
+	}
+	srv := &http.Server{
+		Addr:    exec.MAddr,
+		Handler: exec.HTTPMux,
+	}
+	controllerWG.Add(1) // Ensure  HTTP server draining blocks application shutdown.
+	go func() {
+		defer controllerWG.Done()
+		workerWG.Wait()              // Unblocks upon context cancellation and workers finishing.
+		srv.Shutdown(context.TODO()) // TODO: Derive context tree more carefully from root.
+	}()
+	controllerWG.Add(1)
+	go func() {
+		defer controllerWG.Done()
+		err := srv.Serve(ln)
+		switch {
+		case err == nil:
+		case errors.Is(err, http.ErrServerClosed):
+		default:
+			log.Fatal(err)
+		}
+	}()
+	return nil
+}
+
+func serveSSH(exec *ExecContext, controllerWG, workerWG *sync.WaitGroup, allowed []ssh.PublicKey, sshHandler ssh.Handler) error {
+	l, err := net.Listen("tcp", exec.SAddr)
+	if err != nil {
+		return err
+	}
+	srv := &ssh.Server{Addr: exec.SAddr, Handler: sshHandler}
+	srv.SetOption(ssh.PublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
+		for _, a := range allowed {
+			if ssh.KeysEqual(a, key) {
+				return true
+			}
+		}
+		return false
+	}))
+	controllerWG.Add(1) // Ensure SSH server draining blocks application shutdown.
+	go func() {
+		defer controllerWG.Done()
+		workerWG.Wait()              // Unblocks upon context cancellation and workers finishing.
+		srv.Shutdown(context.TODO()) // TODO: Derive context tree more carefully from root.
+	}()
+	controllerWG.Add(1)
+	go func() {
+		defer controllerWG.Done()
+		err := srv.Serve(l)
+		switch {
+		case err == nil:
+		case errors.Is(err, ssh.ErrServerClosed):
+		default:
+			log.Fatal(err)
+		}
+	}()
+	return nil
+}
 
 func run(exec *ExecContext) error {
 	if os.Geteuid() != 0 {
@@ -134,58 +203,26 @@ func run(exec *ExecContext) error {
 		log.Infof("Reading public key %q", p)
 		data, err := ioutil.ReadFile(p)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		a, _, _, _, err := ssh.ParseAuthorizedKey(data)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		allowed[i] = a
 	}
 
-	newRouter(c, exec.Hosts)
-	go func() {
-		// TODO: Interrupt SSH serving through context cancellation.
-		ssh.ListenAndServe(exec.SAddr, nil,
-			ssh.PublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
-				for _, a := range allowed {
-					if ssh.KeysEqual(a, key) {
-						return true
-					}
-				}
-				return false
-			}),
-		)
-	}()
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
+
+	sshHandler := newRouter(c, exec.Hosts)
 	var workerWG, controllerWG sync.WaitGroup
 	defer controllerWG.Wait()
-	exec.HTTPMux.Handle("/metrics", promhttp.Handler())
-	{ // TODO: Refactor extract this block.
-		ln, err := net.Listen("tcp", exec.MAddr)
-		if err != nil {
-			return err
-		}
-		srv := &http.Server{
-			Addr:    exec.MAddr,
-			Handler: exec.HTTPMux,
-		}
-		go func() {
-			workerWG.Wait()              // Unblocks upon context cancellation and workers finish.
-			srv.Shutdown(context.TODO()) // TODO: Derive context tree more carefully from root.
-		}()
-		controllerWG.Add(1)
-		go func() {
-			defer controllerWG.Done()
-			err := srv.Serve(ln)
-			switch {
-			case err == nil:
-			case errors.Is(err, http.ErrServerClosed):
-			default:
-				log.Fatal(err)
-			}
-		}()
+	if err := serveSSH(exec, &controllerWG, &workerWG, allowed, sshHandler); err != nil {
+		return err
+	}
+	if err := serveMonitoring(exec, &controllerWG, &workerWG); err != nil {
+		return err
 	}
 	log.Infof("Launched servers on port %s (ssh) and %s (metrics) for machines: %v, %d public keys loaded", exec.SAddr, exec.MAddr, exec.Hosts, len(c.Keys.Path))
 	pkg := ospkg.New()

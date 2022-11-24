@@ -14,8 +14,8 @@ import (
 	"go.science.ru.nl/log"
 )
 
-func newRouter(c Config, hosts []string) {
-	ssh.Handle(func(s ssh.Session) {
+func newRouter(c Config, hosts []string) ssh.Handler {
+	return func(s ssh.Session) {
 		if len(s.Command()) == 0 {
 			io.WriteString(s, http.StatusText(http.StatusBadRequest))
 			s.Exit(http.StatusBadRequest)
@@ -30,7 +30,7 @@ func newRouter(c Config, hosts []string) {
 
 		io.WriteString(s, http.StatusText(http.StatusNotFound))
 		s.Exit(http.StatusNotFound)
-	})
+	}
 }
 
 var routes = map[string]func(Config, ssh.Session, []string){

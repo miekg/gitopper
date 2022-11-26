@@ -1,6 +1,6 @@
 [global]
-upstream = "https://github.com/miekg/blah-origin"  # repository where to download from
-mount = "/tmp"                                     # directory where to download to, mount+service is used as path
+upstream = "https://github.com/miekg/gitopper-config"
+mount = "/tmp"
 
 [keys]
 path = [
@@ -9,14 +9,12 @@ path = [
 ]
 
 [[services]]
-machine = "grafana.atoom.net"
+machine = "localhost"
 branch = "main"
-service = "grafana-server" # as used in systemd
-user = "grafana"
-package = "grafana"     # as used by package mgmt
-action = "restart"      # what to do when files are changed
-mount = "/tmp/grafana1" # override mount here
+service = "prometheus"
+user = "prometheus"
+package = "prometheus"
+action = "reload"
 dirs = [
-	{ local = "/etc/grafana", link = "grafana/etc" },
-	{ local = "/var/lib/grafana/dashboards", link = "grafana/dashboards" }
+	{ local = "/etc/prometheus", link = "prometheus/etc" },
 ]

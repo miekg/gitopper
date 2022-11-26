@@ -21,8 +21,20 @@ dirs = [
     { local = "/etc/prometheus", link = "prometheus/etc" },
 ]
 `
-	if _, err := parseConfig([]byte(conf)); err != nil {
+	c, err := parseConfig([]byte(conf))
+	if err != nil {
 		t.Fatalf("expected to parse config, but got: %s", err)
+	}
+	serv := c.Services[0]
+	serv = serv.merge(c.Global)
+	if serv.Mount == "" {
+		t.Errorf("expected service to have Mount, got none")
+	}
+	if serv.Upstream == "" {
+		t.Errorf("expected service to have Upstream, got none")
+	}
+	if serv.Branch != "canary" {
+		t.Errorf("expected Branch to be %s, got %s", "canary", serv.Branch)
 	}
 }
 

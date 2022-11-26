@@ -7,19 +7,19 @@ import (
 func TestValidConfig(t *testing.T) {
 	const conf = `
 [global]
-upstream = "https://github.com/miekg/blah-origin"
+upstream = "https://github.com/miekg/gitopper-config"
 mount = "/tmp"
+branch = "main"
 
 [[services]]
-machine = "grafana.atoom.net"
+machine = "localhost"
 branch = "canary"
-service = "grafana-server"
+service = "prometheus"
 user = "grafana"
 package = "grafana"
-action = "restart"
+action = "reload"
 dirs = [
-    { local = "/etc/grafana", link = "grafana/etc" },
-    { local = "/var/lib/grafana/dashboards", link = "grafana/dashboards" }
+    { local = "/etc/prometheus", link = "prometheus/etc" },
 ]
 `
 	c, err := parseConfig([]byte(conf))
@@ -42,13 +42,13 @@ dirs = [
 func TestInvalidConfig(t *testing.T) {
 	const conf = `
 [global]
-upstream = "https://github.com/miekg/blah-origin"
+upstream = "https://github.com/miekg/gitopper-config"
 mount = "/tmp"
 
 [[services]]
-machine = "grafana.atoom.net"
+machine = "localhost"
 brokenbranch = "main"
-service = "grafana-server"
+service = "prometheus"
 `
 	if _, err := parseConfig([]byte(conf)); err == nil {
 		t.Fatalf("expected to fail to parse config, but got nil error")

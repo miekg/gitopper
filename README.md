@@ -21,7 +21,7 @@ there is a better way of doing those.
 
 ## Features Implemented
 
-From the doc:
+From the [doc](https://miek.nl/2022/november/15/provisioning-services/):
 
 > * metrics, so rollouts/updates can be tracked;
 > * diff detection, so we know state doesn’t reconcile;
@@ -38,25 +38,23 @@ From the doc:
 ## Quick Start
 
 - Compile the gitopper binary: `go build`
-- Install grafana OSS version from the their website (just using this as a test case, nothing
-  special here)
 - Generate an toy SSH key: `ssh-keygen -t ed25519` and make it write to an `id_ed25519_gitopper` file.
 - Put the path to the *PUBLIC* key (ending in .pub) in the `[keys]` section in config.toml
-- Start as root: `sudo ./gitopper -c config.toml -h grafana.atoom.net`
+- Start as root: `sudo ./gitopper -c config.toml -h localhost`
 
-And things should work then. I.e. in /etc/grafana you should see the content of the
-*miekg/blah-origin* repository.
+And things should work then. I.e. in /etc/prometheus you should see the content of the
+*miekg/gitopper-config* repository.
 
-The checked out git repo in /tmp/grafana-server should _only_ contain the grafana directory
+The checked out git repo in /tmp/prometheus should _only_ contain the prometheus directory
 thanks to the sparse checkout. Changes made to the `crap` subdir in that repo do not trigger a
-grafana restart (not even sure grafana actually needs a restart).
+prometheus reload.
 
 Then with cmd/gitopperctl/gitopperctl you can query the server:
 
 ~~~
 ./gitopperctl -i <path-to-your-key> list service @localhost
-#  SERVICE         HASH                                     STATE  INFO  CHANGED
-0  grafana-server  606eb576c1b91248e4c1c4cd0d720f27ac0deb70 OK           Fri, 18 Nov 2022 09:14:52 UTC
+#  SERVICE     HASH                                     STATE  INFO  CHANGED
+0  prometheus  606eb576c1b91248e4c1c4cd0d720f27ac0deb70 OK           Fri, 18 Nov 2022 09:14:52 UTC
 ~~~
 
 ## Services
@@ -82,7 +80,7 @@ becomes BROKEN.
 ~~~ toml
 # global options are applied if a service doens't list them
 [global]
-upstream = "https://github.com/miekg/blah-origin"  # repository where to download from
+upstream = "https://github.com/miekg/gitopper-config"  # repository where to download from
 mount = "/tmp"                                     # directory where to download to, mount+service is used as path
 
 # ssh keys that are allowed in via authorized keys
@@ -91,19 +89,21 @@ path = ["/home/bla/.ssh/key.pub"]
 
 # each managed service has an entry like this
 [[services]]
-machine = "grafana.atoom.net" # hostname of the machine, so a host knows when to pick this up.
+machine = "prometheus"        # hostname of the machine, so a host knows when to pick this up.
 branch = "main"               # what branch to check out
-service = "grafana-server"    # service identifier, if it's used by systemd it must be the systemd service name
-package = "grafana"           # as used by package mgmt, may be empty (not implemented yet)
-user = "grafana"              # do the check out with this user
+service = "prometheus"        # service identifier, if it's used by systemd it must be the systemd service name
+package = "prometheus"        # as used by package mgmt, may be empty (not implemented yet)
+user = "prometheus"           # do the check out with this user
 action = "reload"             # call systemctl <action> <service> when the git repo changes, may be empty
-mount = "/tmp/grafana1"       # where to put the downloaded repo, overrides the global one
 # what directories from the repo to mount under the local directories
 dirs = [
-    { local = "/etc/grafana", link = "grafana/etc" },   # grafana/etc *in the repo* should be mounted under /etc/grafana
-    { local = "/var/lib/grafana/dashboards", link = "grafana/dashboards" }
+    { local = "/etc/prometheus", link = "prometheus/etc" },   # prometheus/etc *in the repo* should be mounted under /etc/prometheus
 ]
 ~~~
+
+Note that `machine` above should match either the machine name ($HOSTNAME) or any of the values you
+give on the `-h` flag. This allows you to create services that run everywhere, by defining a service
+that have name (say) "localhost" and then deploying gitopper with `-h localhost` on every machine.
 
 ### How to Break It
 
@@ -157,10 +157,10 @@ everything from there.
 I.e.:
 
 ~~~
-... -c config.toml -U https://github.com/miekg/blah-origin -D gitopper -M /tmp/
+... -c config.toml -U https://github.com/miekg/gitopper-config -D gitopper -M /tmp/
 ~~~
 
-Will sparse check out (only the `gitopper` (-D flag) directory) of the repo *blah-origin* (-U flag)
+Will sparse check out (only the `gitopper` (-D flag) directory) of the repo *gitopper-config* (-U flag)
 in /tmp/gitopper (-M flag, internally '/gitopper' is added) and will then proceed to parse the
 config file /tmp/gitopper/gitopper/config.toml and proceed with a normal startup.
 
@@ -187,4 +187,5 @@ Authentication uses SSH, so it fits in with the rest of the infrastructure.
 
 ## TODO
 
+- allow env vars in config
 - Include systemd service file.

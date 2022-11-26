@@ -15,7 +15,7 @@ func TestInitialGitCheckout(t *testing.T) {
 	}
 	defer func() { os.RemoveAll(temp) }()
 	s := Service{
-		Upstream: "https://github.com/miekg/blah-origin",
+		Upstream: "https://github.com/miekg/gitopper-config",
 		Branch:   "main",
 		Service:  "test-service",
 		Mount:    temp,

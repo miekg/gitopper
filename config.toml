@@ -5,7 +5,6 @@ mount = "/tmp"
 [keys]
 path = [
 	"keys/miek_id_ed25519_gitopper.pub",
-	"/local/home/miek/.ssh/id_ed25519_gitopper.pub",
 ]
 
 [[services]]

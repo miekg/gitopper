@@ -45,9 +45,9 @@ From the [doc](https://miek.nl/2022/november/15/provisioning-services/):
 And things should work then. I.e. in /etc/prometheus you should see the content of the
 *miekg/gitopper-config* repository.
 
-The checked out git repo in /tmp/prometheus should _only_ contain the prometheus directory
-thanks to the sparse checkout. Changes made to the `crap` subdir in that repo do not trigger a
-prometheus reload.
+The checked out git repo in /tmp/prometheus should _only_ contain the prometheus directory thanks to
+the sparse checkout. Changes made to any other subdirectory in that repo do not trigger a prometheus
+reload.
 
 Then with cmd/gitopperctl/gitopperctl you can query the server:
 

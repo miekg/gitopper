@@ -16,11 +16,11 @@ func ID() string {
 	if err != nil {
 		return ""
 	}
-	i := bytes.Index(buf, []byte("ID="))
+	i := bytes.Index(buf, []byte("\nID=")) // want ^ID=
 	if i == 0 {
 		return ""
 	}
-	id := buf[i+len("ID="):]
+	id := buf[i+len("\nID="):]
 	j := bytes.Index(id, []byte("\n"))
 	if j == 0 {
 		return ""

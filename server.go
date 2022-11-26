@@ -104,14 +104,16 @@ func (s *Service) Change() time.Time {
 	return s.stateStamp
 }
 
-// merge merges anything defined in s1 into s and returns the new Service. Currently this is only
-// done for the Upstream and Branch field.
-func (s *Service) merge(s1 *Service) *Service {
-	if s1.Upstream != "" {
-		s.Upstream = s1.Upstream
+// merge merges anything defined in global into s when s doesn't specify it and returns the new Service.
+func (s *Service) merge(global *Service) *Service {
+	if s.Upstream == "" {
+		s.Upstream = global.Upstream
 	}
-	if s1.Branch != "" {
-		s.Branch = s1.Branch
+	if s.Mount == "" {
+		s.Mount = global.Mount
+	}
+	if s.Branch == "" {
+		s.Branch = global.Branch
 	}
 	if s.Branch == "" {
 		s.Branch = "main"

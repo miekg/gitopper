@@ -15,7 +15,6 @@ service = "grafana-server" # as used in systemd
 user = "grafana"
 package = "grafana"     # as used by package mgmt
 action = "restart"      # what to do when files are changed
-mount = "/tmp/grafana1" # override mount here
 dirs = [
 	{ local = "/etc/grafana", link = "grafana/etc" },
 	{ local = "/var/lib/grafana/dashboards", link = "grafana/dashboards" }

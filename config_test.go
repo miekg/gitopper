@@ -9,10 +9,11 @@ func TestValidConfig(t *testing.T) {
 [global]
 upstream = "https://github.com/miekg/gitopper-config"
 mount = "/tmp"
+branch = "main"
 
 [[services]]
 machine = "localhost"
-branch = "main"
+branch = "canary"
 service = "prometheus"
 user = "grafana"
 package = "grafana"

@@ -12,19 +12,30 @@ mount = "/tmp"
 
 [[services]]
 machine = "grafana.atoom.net"
-branch = "main"
+branch = "canary"
 service = "grafana-server"
 user = "grafana"
 package = "grafana"
 action = "restart"
-mount = "/tmp/grafana1"
 dirs = [
     { local = "/etc/grafana", link = "grafana/etc" },
     { local = "/var/lib/grafana/dashboards", link = "grafana/dashboards" }
 ]
 `
-	if _, err := parseConfig([]byte(conf)); err != nil {
+	c, err := parseConfig([]byte(conf))
+	if err != nil {
 		t.Fatalf("expected to parse config, but got: %s", err)
+	}
+	serv := c.Services[0]
+	serv = serv.merge(c.Global)
+	if serv.Mount == "" {
+		t.Errorf("expected service to have Mount, got none")
+	}
+	if serv.Upstream == "" {
+		t.Errorf("expected service to have Upstream, got none")
+	}
+	if serv.Branch != "canary" {
+		t.Errorf("expected Branch to be %s, got %s", "canary", serv.Branch)
 	}
 }
 

@@ -1,6 +1,9 @@
 package ospkg
 
-import "github.com/miekg/gitopper/osutil"
+import (
+	"github.com/miekg/gitopper/osutil"
+	"go.science.ru.nl/log"
+)
 
 // Installer represents OS package installation tool.
 type Installer interface {
@@ -15,5 +18,6 @@ func New() Installer {
 	case "arch":
 		return new(ArchLinuxInstaller)
 	}
+	log.Warningf("Returning Noop package installer for %s", osutil.ID())
 	return new(NoopInstaller)
 }

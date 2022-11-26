@@ -271,7 +271,7 @@ func (s *Service) bindmount() (int, error) {
 		}
 
 		ctx := context.TODO()
-		cmd := exec.CommandContext(ctx, "mount", "-r", "--bind", gitdir, d.Local)
+		cmd := exec.CommandContext(ctx, "mount", "--bind", gitdir, d.Local) // mount needs to be r/w for pkg upgrades
 		log.Infof("running %v", cmd.Args)
 		err := cmd.Run()
 		if err != nil {

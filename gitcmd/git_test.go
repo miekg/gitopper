@@ -15,8 +15,8 @@ func TestHash(t *testing.T) {
 	if hash == "" {
 		t.Fatal("Failed to get hash")
 	}
-	if len(hash) != 40 {
-		t.Fatalf("Hash length should be 40, got %d", len(hash))
+	if len(hash) != 8 {
+		t.Fatalf("Hash length should be 8, got %d", len(hash))
 	}
 
 	if _, err := hex.DecodeString(hash); err != nil {

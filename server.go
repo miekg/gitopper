@@ -144,9 +144,10 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 	gc := s.newGitCmd()
 
 	log.Infof("Launched tracking routine for %q/%q", s.Machine, s.Service)
+	s.SetHash(gc.Hash())
+	s.SetBoot()
 	state, info := s.State()
 	s.SetState(state, info)
-	s.SetBoot()
 
 	for {
 		s.SetHash(gc.Hash())

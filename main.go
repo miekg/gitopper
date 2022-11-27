@@ -215,16 +215,8 @@ func run(exec *ExecContext) error {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	sshHandler := newRouter(c, exec.Hosts)
 	var workerWG, controllerWG sync.WaitGroup
 	defer controllerWG.Wait()
-	if err := serveSSH(exec, &controllerWG, &workerWG, allowed, sshHandler); err != nil {
-		return err
-	}
-	if err := serveMonitoring(exec, &controllerWG, &workerWG); err != nil {
-		return err
-	}
-	log.Infof("Launched servers on port %s (ssh) and %s (metrics) for machines: %v, %d public keys loaded", exec.SAddr, exec.MAddr, exec.Hosts, len(c.Keys.Path))
 	pkg := ospkg.New()
 	servCnt := 0
 	for _, serv := range c.Services {
@@ -283,6 +275,14 @@ func run(exec *ExecContext) error {
 		log.Warningf("No services found for machine: %v, exiting", exec.Hosts)
 		return nil
 	}
+	sshHandler := newRouter(c, exec.Hosts)
+	if err := serveSSH(exec, &controllerWG, &workerWG, allowed, sshHandler); err != nil {
+		return err
+	}
+	if err := serveMonitoring(exec, &controllerWG, &workerWG); err != nil {
+		return err
+	}
+	log.Infof("Launched servers on port %s (ssh) and %s (metrics) for machines: %v, %d public keys loaded", exec.SAddr, exec.MAddr, exec.Hosts, len(c.Keys.Path))
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)

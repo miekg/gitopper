@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -13,11 +12,13 @@ import (
 	"path"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/gliderlabs/ssh"
 	"github.com/miekg/gitopper/ospkg"
 	"github.com/miekg/gitopper/osutil"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	flag "github.com/spf13/pflag"
 	"go.science.ru.nl/log"
 )
 
@@ -29,6 +30,7 @@ type ExecContext struct {
 	MAddr        string
 	Debug        bool
 	Restart      bool
+	Duration     time.Duration
 	Upstream     string
 	Dir          string
 	Branch       string
@@ -43,19 +45,21 @@ func (exec *ExecContext) RegisterFlags(fs *flag.FlagSet) {
 	if fs == nil {
 		fs = flag.CommandLine
 	}
-	fs.Var(&sliceFlag{&exec.Hosts}, "h", "hosts (comma separated) to impersonate, local hostname is included by default")
-	fs.StringVar(&exec.ConfigSource, "c", "", "config file to read")
-	fs.StringVar(&exec.SAddr, "s", ":2222", "ssh address to listen on")
-	fs.StringVar(&exec.MAddr, "m", ":9222", "http metrics address to listen on")
-	fs.BoolVar(&exec.Debug, "d", false, "enable debug logging")
-	fs.BoolVar(&exec.Restart, "r", false, "send SIGHUP when config changes")
+	fs.SortFlags = false
+	fs.StringSliceVarP(&exec.Hosts, "hosts", "h", []string{osutil.Hostname()}, "hosts (comma separated) to impersonate, hostname is always added")
+	fs.StringVarP(&exec.ConfigSource, "config", "c", "", "config file to read")
+	fs.StringVarP(&exec.SAddr, "ssh", "s", ":2222", "ssh address to listen on")
+	fs.StringVarP(&exec.MAddr, "metric", "m", ":9222", "http metrics address to listen on")
+	fs.BoolVarP(&exec.Debug, "debug", "d", false, "enable debug logging")
+	fs.BoolVarP(&exec.Restart, "restart", "r", false, "send SIGHUP when config changes")
+	fs.DurationVarP(&exec.Duration, "duration", "t", 5*time.Minute, "default duration between pulls")
 
 	// bootstrap flags
-	fs.StringVar(&exec.Upstream, "U", "", "[bootstrapping] use this git repo")
-	fs.StringVar(&exec.Dir, "D", "gitopper", "[bootstrapping] directory to sparse checkout")
-	fs.StringVar(&exec.Branch, "B", "main", "[bootstrapping] check out in this branch")
-	fs.StringVar(&exec.Mount, "M", "", "[bootstrapping] check out into this directory, -c is relative to this dir")
-	fs.BoolVar(&exec.Pull, "P", false, "[boostrapping] pull (update) the git repo to the newest version before starting")
+	fs.StringVarP(&exec.Upstream, "upstream", "U", "", "[bootstrapping] use this git repo")
+	fs.StringVarP(&exec.Dir, "directory", "D", "gitopper", "[bootstrapping] directory to sparse checkout")
+	fs.StringVarP(&exec.Branch, "branch", "B", "main", "[bootstrapping] check out in this branch")
+	fs.StringVarP(&exec.Mount, "mount", "M", "", "[bootstrapping] check out into this directory, -c is relative to this dir")
+	fs.BoolVarP(&exec.Pull, "pull", "P", false, "[boostrapping] pull (update) the git repo to the newest version before starting")
 }
 
 var (
@@ -267,7 +271,7 @@ func run(exec *ExecContext) error {
 		workerWG.Add(1)
 		go func() {
 			defer workerWG.Done()
-			s.trackUpstream(ctx)
+			s.trackUpstream(ctx, exec.Duration)
 		}()
 	}
 
@@ -316,13 +320,26 @@ func run(exec *ExecContext) error {
 }
 
 func main() {
-	exec := ExecContext{
-		Hosts:   []string{osutil.Hostname()},
-		HTTPMux: http.NewServeMux(),
-	}
+	exec := ExecContext{HTTPMux: http.NewServeMux()}
 	exec.RegisterFlags(nil)
-
 	flag.Parse()
+	flag.VisitAll(func(f *flag.Flag) {
+		// add hostname if not already there
+		if f.Name != "hosts" {
+			return
+		}
+		ok := false
+		hostname := osutil.Hostname()
+		for _, v := range f.Value.(flag.SliceValue).GetSlice() {
+			if v == hostname {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			f.Value.Set(osutil.Hostname())
+		}
+	})
 	err := run(&exec)
 	switch {
 	case err == nil:

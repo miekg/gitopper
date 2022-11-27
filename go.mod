@@ -7,12 +7,13 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.6
 	github.com/prometheus/client_golang v1.14.0
 	github.com/rodaine/table v1.0.1
+	github.com/spf13/pflag v1.0.5
 	github.com/urfave/cli/v2 v2.23.5
 	go.science.ru.nl v0.0.0-20221121131430-61f07eb3a2ff
 	golang.org/x/crypto v0.3.0
 )
 
-require github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5 // indirect
+require github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 
 require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect

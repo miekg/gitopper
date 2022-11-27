@@ -2,14 +2,16 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"net/http"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/miekg/gitopper/osutil"
 	"github.com/phayes/freeport"
+	flag "github.com/spf13/pflag"
 )
 
 func TestFlags(t *testing.T) {
@@ -20,12 +22,13 @@ func TestFlags(t *testing.T) {
 		{
 			Arguments: []string(nil),
 			Want: ExecContext{
-				Hosts:        nil,
+				Hosts:        []string{osutil.Hostname()}, // default value
 				ConfigSource: "",
 				SAddr:        ":2222",
 				MAddr:        ":9222",
 				Debug:        false,
 				Restart:      false,
+				Duration:     5 * time.Minute,
 				Upstream:     "",
 				Dir:          "gitopper",
 				Branch:       "main",
@@ -46,12 +49,13 @@ func TestFlags(t *testing.T) {
 				"-M=checkout",
 			},
 			Want: ExecContext{
-				Hosts:        []string{"me", "you"},
+				Hosts:        []string{"me", "you"}, // only in main() we add our hostname
 				ConfigSource: "/dev/null",
 				SAddr:        ":3000",
 				MAddr:        ":2000",
 				Debug:        true,
 				Restart:      true,
+				Duration:     5 * time.Minute,
 				Upstream:     "/upstream",
 				Dir:          "/sparse",
 				Branch:       "branch",

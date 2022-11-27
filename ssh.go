@@ -150,7 +150,7 @@ func RollbackService(c Config, s ssh.Session, hosts []string) {
 	target := s.Command()[1]
 	hash := s.Command()[2]
 	if _, err := hex.DecodeString(hash); err != nil {
-		io.WriteString(s, http.StatusText(http.StatusNotAcceptable)+", not a valid git hash: "+hash)
+		io.WriteString(s, http.StatusText(http.StatusNotAcceptable)+", not a valid hexadecimal git hash: "+hash)
 		s.Exit(http.StatusNotAcceptable)
 		return
 	}

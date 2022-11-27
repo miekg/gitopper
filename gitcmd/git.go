@@ -110,6 +110,7 @@ func (g *Git) Pull() (bool, error) {
 }
 
 // Hash returns the git hash of HEAD in the repo in g.mount. Empty string is returned in case of an error.
+// The hash is always truncated to 8 hex digits.
 func (g *Git) Hash() string {
 	g.cwd = g.mount
 	defer func() { g.cwd = "" }()
@@ -118,7 +119,10 @@ func (g *Git) Hash() string {
 	if err != nil {
 		return ""
 	}
-	return string(out)
+	if len(out) < 8 {
+		return ""
+	}
+	return string(out)[:8]
 }
 
 // Rollback checks out commit <hash>, and return nil if no errors are encountered.

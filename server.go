@@ -17,8 +17,6 @@ import (
 	"go.science.ru.nl/mountinfo"
 )
 
-const Duration = 30 * time.Second // increase when production nears, or make a flag.
-
 // Service contains the service configuration tied to a specific machine.
 type Service struct {
 	Upstream string // The URL of the (upstream) Git repository.
@@ -141,7 +139,7 @@ func (s *Service) newGitCmd() *gitcmd.Git {
 
 // TrackUpstream does all the administration to track upstream and issue systemctl commands to keep the process
 // informed.
-func (s *Service) trackUpstream(ctx context.Context) {
+func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 	gc := s.newGitCmd()
 
 	log.Infof("Launched tracking routine for %q/%q", s.Machine, s.Service)
@@ -153,7 +151,7 @@ func (s *Service) trackUpstream(ctx context.Context) {
 		s.SetHash(gc.Hash())
 
 		select {
-		case <-time.After(Duration):
+		case <-time.After(duration):
 		case <-ctx.Done():
 			return
 		}

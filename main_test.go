@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"net/http"
 	"sync"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/phayes/freeport"
+	flag "github.com/spf13/pflag"
 )
 
 func TestFlags(t *testing.T) {

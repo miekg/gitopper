@@ -46,7 +46,7 @@ func (exec *ExecContext) RegisterFlags(fs *flag.FlagSet) {
 		fs = flag.CommandLine
 	}
 	fs.SortFlags = false
-	fs.StringSliceVarP(&exec.Hosts, "hosts", "h", []string{osutil.Hostname()}, "hosts (comma separated) to impersonate, local hostname is always added")
+	fs.StringSliceVarP(&exec.Hosts, "hosts", "h", []string{osutil.Hostname()}, "hosts (comma separated) to impersonate, hostname is always added")
 	fs.StringVarP(&exec.ConfigSource, "config", "c", "", "config file to read")
 	fs.StringVarP(&exec.SAddr, "ssh", "s", ":2222", "ssh address to listen on")
 	fs.StringVarP(&exec.MAddr, "metric", "m", ":9222", "http metrics address to listen on")
@@ -324,7 +324,7 @@ func main() {
 	exec.RegisterFlags(nil)
 	flag.Parse()
 	flag.VisitAll(func(f *flag.Flag) {
-		// add local hostname if not already there
+		// add hostname if not already there
 		if f.Name != "hosts" {
 			return
 		}

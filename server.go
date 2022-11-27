@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path"
@@ -151,7 +152,7 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 		s.SetHash(gc.Hash())
 
 		select {
-		case <-time.After(duration):
+		case <-time.After(jitter(duration)):
 		case <-ctx.Done():
 			return
 		}
@@ -303,4 +304,11 @@ func selfService(upstream, branch, mount, dir string) *Service {
 func exists(p string) bool {
 	_, err := os.Stat(p)
 	return err == nil
+}
+
+// jitter will add a random amount of jitter [0, d/2] to d.
+func jitter(d time.Duration) time.Duration {
+	rand.Seed(time.Now().UnixNano())
+	max := d / 2
+	return d + time.Duration(rand.Int63n(int64(max)))
 }

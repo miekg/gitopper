@@ -222,6 +222,19 @@ func run(exec *ExecContext) error {
 
 	var workerWG, controllerWG sync.WaitGroup
 	defer controllerWG.Wait()
+
+	// start a fake worker thread, that in the case of no actual threads, will call done on the workerWG (and more
+	// importantly will now have seen at least one Add(1)). This will make sure the serveMetrics and serveSSH return
+	// correctly on receiving ^C.
+	workerWG.Add(1)
+	go func() {
+		defer workerWG.Done()
+		select {
+		case <-ctx.Done():
+			return
+		}
+	}()
+
 	pkg := ospkg.New()
 	servCnt := 0
 	for _, serv := range c.Services {

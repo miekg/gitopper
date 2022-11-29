@@ -38,7 +38,7 @@ func newRouter(c Config, hosts []string) ssh.Handler {
 		for prefix, f := range routes {
 			if strings.HasPrefix(s.Command()[0], prefix) {
 				if ro && strings.HasPrefix(s.Command()[0], "/state/") {
-					log.Infof("Key for user %q is set RO and route is RW, denying", s.User())
+					log.Warningf("Key for user %q is set RO and route is RW, denying", s.User())
 					io.WriteString(s, http.StatusText(http.StatusUnauthorized))
 					s.Exit(http.StatusUnauthorized)
 					return

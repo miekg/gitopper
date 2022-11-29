@@ -128,7 +128,7 @@ func serveSSH(exec *ExecContext, controllerWG, workerWG *sync.WaitGroup, allowed
 				return true
 			}
 		}
-		log.Info("No valid keys found for user %q", ctx.User())
+		log.Warningf("No valid keys found for user %q", ctx.User())
 		return false
 	}))
 	controllerWG.Add(1) // Ensure SSH server draining blocks application shutdown.

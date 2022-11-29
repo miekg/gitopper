@@ -84,6 +84,12 @@ func (g *Git) Checkout() error {
 		return fmt.Errorf("failed to create directory %q: %s", g.mount, err)
 	}
 
+	uid, gid := osutil.User(g.user)
+	if err := os.Chown(g.mount, int(uid), int(gid)); err != nil {
+		log.Errorf("Directory %q can not be chown to %q: %s", g.mount, g.user, err)
+		return fmt.Errorf("failed to chown directory %q to %q: %s", g.mount, g.user, err)
+	}
+
 	g.cwd = ""
 	_, err := g.run("clone", "-b", g.branch, "--filter=blob:none", "--no-checkout", "--sparse", g.upstream, g.mount)
 	if err != nil {

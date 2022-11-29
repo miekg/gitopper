@@ -5,6 +5,7 @@ package gitcmd
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -76,6 +77,19 @@ func (g *Git) IsCheckedOut() bool {
 func (g *Git) Checkout() error {
 	if g.IsCheckedOut() {
 		return nil
+	}
+
+	if err := os.MkdirAll(g.mount, 0775); err != nil {
+		log.Errorf("Directory %q can not be created", g.mount)
+		return fmt.Errorf("failed to create directory %q: %s", g.mount, err)
+	}
+
+	if os.Geteuid() == 0 { // set g.mount to the correct owner, if we are root
+		uid, gid := osutil.User(g.user)
+		if err := os.Chown(g.mount, int(uid), int(gid)); err != nil {
+			log.Errorf("Directory %q can not be chown to %q: %s", g.mount, g.user, err)
+			return fmt.Errorf("failed to chown directory %q to %q: %s", g.mount, g.user, err)
+		}
 	}
 
 	g.cwd = ""

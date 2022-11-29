@@ -10,19 +10,26 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gliderlabs/ssh"
 	toml "github.com/pelletier/go-toml/v2"
 	"go.science.ru.nl/log"
 )
 
 // Config holds the gitopper config file. It's is updated every so often to pick up new changes.
 type Config struct {
-	Global   *Service
-	Keys     Key
+	Global   `toml:"global"`
 	Services []*Service
 }
 
+type Global struct {
+	*Service
+	Keys []*Key
+}
+
 type Key struct {
-	Path []string
+	Path          string
+	RO            bool `toml:"ro"` // treat key as ro, and disallow "write" commands
+	ssh.PublicKey `toml:"-"`
 }
 
 func parseConfig(doc []byte) (c Config, err error) {
@@ -34,7 +41,7 @@ func parseConfig(doc []byte) (c Config, err error) {
 
 // Valid checks the config in c and returns nil of all mandatory fields have been set.
 func (c Config) Valid() error {
-	if len(c.Keys.Path) == 0 {
+	if len(c.Global.Keys) == 0 {
 		return fmt.Errorf("at least one public key should be specified")
 	}
 

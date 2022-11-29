@@ -104,7 +104,7 @@ func (s *Service) Change() time.Time {
 }
 
 // merge merges anything defined in global into s when s doesn't specify it and returns the new Service.
-func (s *Service) merge(global *Service) *Service {
+func (s *Service) merge(global Global) *Service {
 	if s.Upstream == "" {
 		s.Upstream = global.Upstream
 	}

@@ -5,6 +5,7 @@ package gitcmd
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -76,6 +77,11 @@ func (g *Git) IsCheckedOut() bool {
 func (g *Git) Checkout() error {
 	if g.IsCheckedOut() {
 		return nil
+	}
+
+	if err := os.MkdirAll(g.mount, 0775); err != nil {
+		log.Errorf("Directory %q can not be created", g.mount)
+		return fmt.Errorf("failed to create directory %q: %s", g.mount, err)
 	}
 
 	g.cwd = ""

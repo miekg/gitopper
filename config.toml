@@ -1,6 +1,6 @@
 [global]
 upstream = "https://github.com/miekg/gitopper-config"
-mount = "/tmp"
+mount = "/tmp/blaat/gitopper"
 keys = [
 	{ path = "keys/miek_id_ed25519_gitopper.pub", ro = true },
 	{ path = "/local/home/miek/.ssh/id_ed25519_gitopper.pub"},

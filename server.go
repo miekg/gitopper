@@ -257,7 +257,7 @@ func (s *Service) bindmount() (int, error) {
 				log.Errorf("Directory %q can not be created", d.Local)
 				return 0, fmt.Errorf("failed to create directory %q: %s", d.Local, err)
 			}
-			if os.Geteuid() == 0 { // set g.mount to the correct owner, if we are root
+			if os.Geteuid() == 0 { // set d.Local to the correct owner, if we are root
 				uid, gid := osutil.User(s.User)
 				if err := os.Chown(d.Local, int(uid), int(gid)); err != nil {
 					log.Errorf("Directory %q can not be chown to %q: %s", d.Local, s.User, err)

@@ -16,18 +16,40 @@ import (
 
 func newRouter(c Config, hosts []string) ssh.Handler {
 	return func(s ssh.Session) {
+		pub := s.PublicKey()
+		if pub == nil {
+			log.Warningf("Connection denied for user %q", s.User())
+			io.WriteString(s, http.StatusText(http.StatusUnauthorized))
+			s.Exit(http.StatusUnauthorized)
+			return
+		}
+		ro := false
+		for _, a := range c.Keys {
+			if ssh.KeysEqual(a.PublicKey, s.PublicKey()) {
+				ro = a.RO
+			}
+		}
 		if len(s.Command()) == 0 {
+			log.Warningf("No commands in connection for user %q", s.User())
 			io.WriteString(s, http.StatusText(http.StatusBadRequest))
 			s.Exit(http.StatusBadRequest)
 			return
 		}
 		for prefix, f := range routes {
 			if strings.HasPrefix(s.Command()[0], prefix) {
+				if ro && strings.HasPrefix(s.Command()[0], "/state/") {
+					log.Infof("Key for user %q is set RO and route is RW, denying", s.User())
+					io.WriteString(s, http.StatusText(http.StatusUnauthorized))
+					s.Exit(http.StatusUnauthorized)
+					return
+				}
+				log.Infof("Routing to %q for user %q", prefix, s.User())
 				f(c, s, hosts)
 				return
 			}
 		}
 
+		log.Warningf("No route found for user %q", s.User())
 		io.WriteString(s, http.StatusText(http.StatusNotFound))
 		s.Exit(http.StatusNotFound)
 	}

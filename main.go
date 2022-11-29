@@ -115,7 +115,7 @@ func serveMonitoring(exec *ExecContext, controllerWG, workerWG *sync.WaitGroup) 
 	return nil
 }
 
-func serveSSH(exec *ExecContext, controllerWG, workerWG *sync.WaitGroup, allowed []ssh.PublicKey, sshHandler ssh.Handler) error {
+func serveSSH(exec *ExecContext, controllerWG, workerWG *sync.WaitGroup, allowed []*Key, sshHandler ssh.Handler) error {
 	l, err := net.Listen("tcp", exec.SAddr)
 	if err != nil {
 		return err
@@ -123,10 +123,12 @@ func serveSSH(exec *ExecContext, controllerWG, workerWG *sync.WaitGroup, allowed
 	srv := &ssh.Server{Addr: exec.SAddr, Handler: sshHandler}
 	srv.SetOption(ssh.PublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
 		for _, a := range allowed {
-			if ssh.KeysEqual(a, key) {
+			if ssh.KeysEqual(a.PublicKey, key) {
+				log.Infof("Granting access for user %q", ctx.User())
 				return true
 			}
 		}
+		log.Info("No valid keys found for user %q", ctx.User())
 		return false
 	}))
 	controllerWG.Add(1) // Ensure SSH server draining blocks application shutdown.
@@ -197,15 +199,14 @@ func run(exec *ExecContext) error {
 		c.Services = append(c.Services, self)
 	}
 
-	allowed := make([]ssh.PublicKey, len(c.Keys.Path))
-	for i, p := range c.Keys.Path {
-		if !path.IsAbs(p) && self != nil { // bootstrapping
-			newpath := path.Join(path.Join(path.Join(self.Mount, self.Service), exec.Dir), p)
-			p = newpath
+	for _, k := range c.Global.Keys {
+		if !path.IsAbs(k.Path) && self != nil { // bootstrapping
+			newpath := path.Join(path.Join(path.Join(self.Mount, self.Service), exec.Dir), k.Path)
+			k.Path = newpath
 		}
 
-		log.Infof("Reading public key %q", p)
-		data, err := ioutil.ReadFile(p)
+		log.Infof("Reading public key %q", k.Path)
+		data, err := ioutil.ReadFile(k.Path)
 		if err != nil {
 			return err
 		}
@@ -213,7 +214,7 @@ func run(exec *ExecContext) error {
 		if err != nil {
 			return err
 		}
-		allowed[i] = a
+		k.PublicKey = a
 	}
 
 	ctx, cancel := context.WithCancel(context.TODO())
@@ -280,13 +281,13 @@ func run(exec *ExecContext) error {
 		return nil
 	}
 	sshHandler := newRouter(c, exec.Hosts)
-	if err := serveSSH(exec, &controllerWG, &workerWG, allowed, sshHandler); err != nil {
+	if err := serveSSH(exec, &controllerWG, &workerWG, c.Global.Keys, sshHandler); err != nil {
 		return err
 	}
 	if err := serveMonitoring(exec, &controllerWG, &workerWG); err != nil {
 		return err
 	}
-	log.Infof("Launched servers on port %s (ssh) and %s (metrics) for machines: %v, %d public keys loaded", exec.SAddr, exec.MAddr, exec.Hosts, len(c.Keys.Path))
+	log.Infof("Launched servers on port %s (ssh) and %s (metrics) for machines: %v, %d public keys loaded", exec.SAddr, exec.MAddr, exec.Hosts, len(c.Global.Keys))
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)

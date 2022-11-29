@@ -82,10 +82,11 @@ becomes BROKEN.
 [global]
 upstream = "https://github.com/miekg/gitopper-config"  # repository where to download from
 mount = "/tmp"                                     # directory where to download to, mount+service is used as path
-
 # ssh keys that are allowed in via authorized keys
-[keys]
-path = ["/home/bla/.ssh/key.pub"]
+keys =[
+	{ path = "keys/miek_id_ed25519_gitopper.pub" },
+	{ path = "keys/another_key.pub", ro = true },
+]
 
 # each managed service has an entry like this
 [[services]]
@@ -187,5 +188,4 @@ Authentication uses SSH, so it fits in with the rest of the infrastructure.
 
 ## TODO
 
-- allow env vars in config
-- Include systemd service file.
+Maybe log public keys paths so we know exactly what keys is meant. Or just comment the toml file?

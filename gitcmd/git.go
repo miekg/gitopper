@@ -113,6 +113,10 @@ func (g *Git) Checkout() error {
 
 // Pull pulls from upstream. If the returned bool is true there were updates.
 func (g *Git) Pull() (bool, error) {
+	if err := g.Stash(); err != nil {
+		return false, err
+	}
+
 	g.cwd = g.mount
 	defer func() { g.cwd = "" }()
 
@@ -141,9 +145,22 @@ func (g *Git) Hash() string {
 
 // Rollback checks out commit <hash>, and return nil if no errors are encountered.
 func (g *Git) Rollback(hash string) error {
+	if err := g.Stash(); err != nil {
+		return err
+	}
+
 	g.cwd = g.mount
 	defer func() { g.cwd = "" }()
 	_, err := g.run("checkout", hash)
+	return err
+}
+
+// Stash runs a git stash
+func (g *Git) Stash() error {
+	g.cwd = g.mount
+	defer func() { g.cwd = "" }()
+
+	_, err := g.run("stash")
 	return err
 }
 

@@ -87,7 +87,7 @@ func (g *Git) Checkout() error {
 	if os.Geteuid() == 0 { // set g.mount to the correct owner, if we are root
 		uid, gid := osutil.User(g.user)
 		if err := os.Chown(g.mount, int(uid), int(gid)); err != nil {
-			log.Errorf("Directory %q can not be chown to %q: %s", g.mount, g.user, err)
+			log.Errorf("Directory %q can not be chown-ed to %q: %s", g.mount, g.user, err)
 			return fmt.Errorf("failed to chown directory %q to %q: %s", g.mount, g.user, err)
 		}
 	}

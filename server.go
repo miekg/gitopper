@@ -143,7 +143,7 @@ func (s *Service) newGitCmd() *gitcmd.Git {
 func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 	gc := s.newGitCmd()
 
-	log.Infof("Launched tracking routine for %q/%q", s.Machine, s.Service)
+	log.Infof("Launched tracking routine for %q", s.Service)
 	s.SetHash(gc.Hash())
 	s.SetBoot()
 	state, info := s.State()
@@ -161,29 +161,29 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 		// this in now only done once... because we set state to broken... Should we keep trying??
 		if state == StateRollback && info != s.hash {
 			if err := gc.Rollback(info); err != nil {
-				log.Warningf("Machine %q, error rollback repo %q to %q: %s", s.Machine, s.Upstream, info, err)
+				log.Warningf("Service %q, error rollback repo %q to %q: %s", s.Service, s.Upstream, info, err)
 				s.SetState(StateBroken, fmt.Sprintf("error rolling back %q to %q: %s", s.Upstream, info, err))
 				continue
 			}
 
 			if err := s.systemctl(); err != nil {
-				log.Warningf("Machine %q, error running systemctl: %s", s.Machine, err)
+				log.Warningf("Service %q, error running systemctl: %s", s.Service, err)
 				s.SetState(StateBroken, fmt.Sprintf("error running systemctl %q: %s", s.Upstream, err))
 				continue
 			}
-			log.Warningf("Machine %q, successfully rollback repo %q to %s", s.Machine, s.Upstream, info)
+			log.Warningf("Service %q, successfully rollback repo %q to %s", s.Service, s.Upstream, info)
 			s.SetState(StateFreeze, "ROLLBACK: "+info)
 			continue
 		}
 
 		if state, _ := s.State(); state == StateFreeze || state == StateRollback {
-			log.Warningf("Machine %q is service %q is %s, not pulling", s.Machine, s.Service, state)
+			log.Warningf("Service %q is in %s, not pulling", s.Service, state)
 			continue
 		}
 
 		changed, err := gc.Pull()
 		if err != nil {
-			log.Warningf("Machine %q, error pulling repo %q: %s", s.Machine, s.Upstream, err)
+			log.Warningf("Service %q, error pulling repo %q: %s", s.Service, s.Upstream, err)
 			s.SetState(StateBroken, fmt.Sprintf("error pulling %q: %s", s.Upstream, err))
 			continue
 		}
@@ -196,9 +196,9 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 		state, info = s.State()
 		s.SetState(state, info)
 
-		log.Infof("Machine %q, diff in repo %q, pinging service: %s", s.Machine, s.Upstream, s.Service)
+		log.Infof("Service %q, diff in repo %q, pinging it", s.Service, s.Upstream)
 		if err := s.systemctl(); err != nil {
-			log.Warningf("Machine %q, error running systemctl: %s", s.Machine, err)
+			log.Warningf("Service %q, error running systemctl: %s", s.Service, err)
 			s.SetState(StateBroken, fmt.Sprintf("error running systemctl %q: %s", s.Upstream, err))
 			continue
 		}
@@ -260,7 +260,7 @@ func (s *Service) bindmount() (int, error) {
 			if os.Geteuid() == 0 { // set d.Local to the correct owner, if we are root
 				uid, gid := osutil.User(s.User)
 				if err := os.Chown(d.Local, int(uid), int(gid)); err != nil {
-					log.Errorf("Directory %q can not be chown to %q: %s", d.Local, s.User, err)
+					log.Errorf("Directory %q can not be chown-ed to %q: %s", d.Local, s.User, err)
 					return 0, fmt.Errorf("failed to chown directory %q to %q: %s", d.Local, s.User, err)
 				}
 			}

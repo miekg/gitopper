@@ -185,7 +185,3 @@ A client is included in cmd/gitopperctl. It has its own README.md.
 ## Authentication
 
 Authentication uses SSH, so it fits in with the rest of the infrastructure.
-
-## TODO
-
-Maybe log public keys paths so we know exactly what keys is meant. Or just comment the toml file?

@@ -124,7 +124,7 @@ func serveSSH(exec *ExecContext, controllerWG, workerWG *sync.WaitGroup, allowed
 	srv.SetOption(ssh.PublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
 		for _, a := range allowed {
 			if ssh.KeysEqual(a.PublicKey, key) {
-				log.Infof("Granting access for user %q", ctx.User())
+				log.Infof("Granting access for user %q with public key %q", ctx.User(), a.Path)
 				return true
 			}
 		}

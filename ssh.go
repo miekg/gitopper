@@ -23,10 +23,12 @@ func newRouter(c Config, hosts []string) ssh.Handler {
 			s.Exit(http.StatusUnauthorized)
 			return
 		}
-		ro := false
+		var key *Key
 		for _, a := range c.Keys {
 			if ssh.KeysEqual(a.PublicKey, s.PublicKey()) {
-				ro = a.RO
+				// this should always have a hit, because it's already checked as an option in the ssh
+				// server.
+				key = a
 			}
 		}
 		if len(s.Command()) == 0 {
@@ -37,19 +39,19 @@ func newRouter(c Config, hosts []string) ssh.Handler {
 		}
 		for prefix, f := range routes {
 			if strings.HasPrefix(s.Command()[0], prefix) {
-				if ro && strings.HasPrefix(s.Command()[0], "/state/") {
-					log.Warningf("Key for user %q is set RO and route is RW, denying", s.User())
+				if key.RO && strings.HasPrefix(s.Command()[0], "/state/") {
+					log.Warningf("Key for user %q with public key %q is set RO and route is RW, denying", key.Path, s.User())
 					io.WriteString(s, http.StatusText(http.StatusUnauthorized))
 					s.Exit(http.StatusUnauthorized)
 					return
 				}
-				log.Infof("Routing to %q for user %q", prefix, s.User())
+				log.Infof("Routing to %q for user %q with public key %q", prefix, s.User(), key.Path)
 				f(c, s, hosts)
 				return
 			}
 		}
 
-		log.Warningf("No route found for user %q", s.User())
+		log.Warningf("No route found for user %q with public key %q", s.User(), key.Path)
 		io.WriteString(s, http.StatusText(http.StatusNotFound))
 		s.Exit(http.StatusNotFound)
 	}

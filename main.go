@@ -30,6 +30,7 @@ type ExecContext struct {
 	MAddr        string
 	Debug        bool
 	Restart      bool
+	Root         bool
 	Duration     time.Duration
 	Upstream     string
 	Dir          string
@@ -52,6 +53,7 @@ func (exec *ExecContext) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVarP(&exec.MAddr, "metric", "m", ":9222", "http metrics address to listen on")
 	fs.BoolVarP(&exec.Debug, "debug", "d", false, "enable debug logging")
 	fs.BoolVarP(&exec.Restart, "restart", "r", false, "send SIGHUP when config changes")
+	fs.BoolVarP(&exec.Root, "root", "o", true, "require root permission, setting to false can aid in debugging")
 	fs.DurationVarP(&exec.Duration, "duration", "t", 5*time.Minute, "default duration between pulls")
 
 	// bootstrap flags
@@ -152,7 +154,7 @@ func serveSSH(exec *ExecContext, controllerWG, workerWG *sync.WaitGroup, allowed
 }
 
 func run(exec *ExecContext) error {
-	if os.Geteuid() != 0 {
+	if os.Geteuid() != 0 && exec.Root {
 		return ErrNotRoot
 	}
 

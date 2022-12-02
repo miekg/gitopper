@@ -28,6 +28,7 @@ func TestFlags(t *testing.T) {
 				MAddr:        ":9222",
 				Debug:        false,
 				Restart:      false,
+				Root:         true,
 				Duration:     5 * time.Minute,
 				Upstream:     "",
 				Dir:          "gitopper",
@@ -55,6 +56,7 @@ func TestFlags(t *testing.T) {
 				MAddr:        ":2000",
 				Debug:        true,
 				Restart:      true,
+				Root:         true,
 				Duration:     5 * time.Minute,
 				Upstream:     "/upstream",
 				Dir:          "/sparse",
@@ -77,7 +79,7 @@ func TestFlags(t *testing.T) {
 
 func TestEndToEnd(t *testing.T) {
 	// TODO: Make generally testable.
-	err := run(new(ExecContext))
+	err := run(&ExecContext{Root: true})
 	if got, want := err, ErrNotRoot; !errors.Is(got, want) {
 		t.Errorf("run(exec) = %v, want %v", got, want)
 	}

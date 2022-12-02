@@ -38,8 +38,8 @@ From the [doc](https://miek.nl/2022/november/15/provisioning-services/):
 ## Quick Start
 
 - Compile the gitopper binary: `go build`
-- Generate an toy SSH key: `ssh-keygen -t ed25519` and make it write to an `id_ed25519_gitopper` file.
-- Put the path to the *PUBLIC* key (ending in .pub) in the `[keys]` section in config.toml
+- Generate a toy SSH key: `ssh-keygen -t ed25519` and make it write to an `id_ed25519_gitopper` file.
+- Put the path to the *PUBLIC* key (ending in .pub) in the `keys` fields of `[global]` in config.toml
 - Start as root: `sudo ./gitopper -c config.toml -h localhost`
 
 And things should work then. I.e. in /etc/prometheus you should see the content of the
@@ -74,6 +74,9 @@ would be nice to have this state in the git repo somehow?).
 
 ROLLBACK is a transient state and quickly moves to FREEZE, unless something goes wrong then it
 becomes BROKEN.
+
+If ROLLBACK stays in ROLLBACK for a longer period it means the commit it needs to rollback to can't
+be found.
 
 ## Config File
 

@@ -168,6 +168,23 @@ func main() {
 							return err
 						},
 					},
+					{
+						Name:    "pull",
+						Aliases: []string{"p"},
+						Usage:   "state pull @machine <service>",
+						Action: func(ctx *cli.Context) error {
+							at, err := atMachine(ctx)
+							if err != nil {
+								return err
+							}
+							service := ctx.Args().Get(1)
+							if service == "" {
+								return fmt.Errorf("need service")
+							}
+							_, err = querySSH(ctx, at, "/state/pull", service)
+							return err
+						},
+					},
 				},
 			},
 		},

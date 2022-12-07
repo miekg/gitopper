@@ -109,14 +109,14 @@ func main() {
 				},
 			},
 			{
-				Name:    "state",
-				Aliases: []string{"st", "s"},
+				Name:    "do",
+				Aliases: []string{"d"},
 				Usage:   "apply state changes to a service on a machine",
 				Subcommands: []*cli.Command{
 					{
 						Name:    "freeze",
 						Aliases: []string{"f"},
-						Usage:   "state freeze @machine <service>",
+						Usage:   "do freeze @machine <service>",
 						Action: func(ctx *cli.Context) error {
 							at, err := atMachine(ctx)
 							if err != nil {
@@ -126,14 +126,14 @@ func main() {
 							if service == "" {
 								return fmt.Errorf("need service")
 							}
-							_, err = querySSH(ctx, at, "/state/freeze", service)
+							_, err = querySSH(ctx, at, "/do/freeze", service)
 							return err
 						},
 					},
 					{
 						Name:    "unfreeze",
 						Aliases: []string{"u"},
-						Usage:   "state unfreeze @machine <service>",
+						Usage:   "do unfreeze @machine <service>",
 						Action: func(ctx *cli.Context) error {
 							at, err := atMachine(ctx)
 							if err != nil {
@@ -143,14 +143,14 @@ func main() {
 							if service == "" {
 								return fmt.Errorf("need service")
 							}
-							_, err = querySSH(ctx, at, "/state/unfreeze", service)
+							_, err = querySSH(ctx, at, "/do/unfreeze", service)
 							return err
 						},
 					},
 					{
 						Name:    "rollback",
 						Aliases: []string{"r"},
-						Usage:   "state rollback @machine <service> <hash>",
+						Usage:   "do rollback @machine <service> <hash>",
 						Action: func(ctx *cli.Context) error {
 							at, err := atMachine(ctx)
 							if err != nil {
@@ -164,14 +164,14 @@ func main() {
 							if hash == "" {
 								return fmt.Errorf("need hash to rollback to")
 							}
-							_, err = querySSH(ctx, at, "/state/rollback", service, hash)
+							_, err = querySSH(ctx, at, "/do/rollback", service, hash)
 							return err
 						},
 					},
 					{
 						Name:    "pull",
 						Aliases: []string{"p"},
-						Usage:   "state pull @machine <service>",
+						Usage:   "do pull @machine <service>",
 						Action: func(ctx *cli.Context) error {
 							at, err := atMachine(ctx)
 							if err != nil {
@@ -181,7 +181,7 @@ func main() {
 							if service == "" {
 								return fmt.Errorf("need service")
 							}
-							_, err = querySSH(ctx, at, "/state/pull", service)
+							_, err = querySSH(ctx, at, "/do/pull", service)
 							return err
 						},
 					},

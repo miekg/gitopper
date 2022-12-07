@@ -60,8 +60,8 @@ func (exec *ExecContext) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVarP(&exec.Upstream, "upstream", "U", "", "[bootstrapping] use this git repo")
 	fs.StringVarP(&exec.Dir, "directory", "D", "gitopper", "[bootstrapping] directory to sparse checkout")
 	fs.StringVarP(&exec.Branch, "branch", "B", "main", "[bootstrapping] check out in this branch")
-	fs.StringVarP(&exec.Mount, "mount", "M", "", "[bootstrapping] check out into this directory, -c is relative to this dir")
-	fs.BoolVarP(&exec.Pull, "pull", "P", false, "[boostrapping] pull (update) the git repo to the newest version before starting")
+	fs.StringVarP(&exec.Mount, "mount", "M", "", "[bootstrapping] check out into this directory, -c is relative to this directory")
+	fs.BoolVarP(&exec.Pull, "pull", "P", false, "[bootstrapping] pull (update) the git repo to the newest version before starting")
 }
 
 var (
@@ -169,7 +169,7 @@ func run(exec *ExecContext) error {
 	// bootstrapping
 	self := selfService(exec.Upstream, exec.Branch, exec.Mount, exec.Dir)
 	if self != nil {
-		log.Infof("Bootstapping from repo %q and adding service %q for %q", exec.Upstream, self.Service, self.Machine)
+		log.Infof("Bootstrapping from repo %q and adding service %q for %q", exec.Upstream, self.Service, self.Machine)
 		gc := self.newGitCmd()
 		err := gc.Checkout()
 		if err != nil {
@@ -177,7 +177,8 @@ func run(exec *ExecContext) error {
 		}
 		if exec.Pull {
 			if _, err := gc.Pull(); err != nil {
-				return &RepoPullError{self.Machine, self.Upstream, err}
+				// don't exit here, we have a repo, maybe it's good enough, we can always pull later
+				log.Warningf("Bootstrapping service %q, error pulling repo %q: %s, continuing", self.Service, self.Upstream, err)
 			}
 		}
 		exec.ConfigSource = path.Join(path.Join(path.Join(self.Mount, self.Service), exec.Dir), exec.ConfigSource)

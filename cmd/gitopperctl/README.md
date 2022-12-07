@@ -3,7 +3,7 @@
 Small cli to inspect control gitopper remotely. The command line syntax follow other \*-ctl tools a
 bit.
 
-The two main branches of use are `list` and `state`. Not the `-i <sshkey>` is only shown once in
+The two main branches of use are `list` and `do`. Not the `-i <sshkey>` is only shown once in
 these examples:
 
 ~~~
@@ -36,27 +36,27 @@ grafana-server  606eb576  OK           2022-11-18 13:29:44.824004812 +0000 UTC
 Freezing (make it stop updating to the latest commit), until a unfreeze:
 
 ~~~
-./gitopperctl state freeze   @<host> <service>
-./gitopperctl state unfreeze @<host> <service>
+./gitopperctl do freeze   @<host> <service>
+./gitopperctl do unfreeze @<host> <service>
 ~~~
 
 Rolling back to a previous commit, hash needs to be a valid hexadecimal value (meaning it must be of
 even length):
 
 ~~~
-./gitopperctl state rollback @<host> <service> <hash>
+./gitopperctl do rollback @<host> <service> <hash>
 ~~~
 
 And this can be abbreviated to:
 
 ~~~
-./gitopperctl s r @<host> <service> <hash>
+./gitopperctl d r @<host> <service> <hash>
 ~~~
 
 Or make it to pull now and now wait for the default wait duration to expire:
 
 ~~~
-./gitopper state pull @<host> <service>
+./gitopper do pull @<host> <service>
 ~~~
 
 ## Example
@@ -74,7 +74,7 @@ grafana-server  606eb576  OK           0001-01-01 00:00:00 +0000 UTC
 -  rollback
 
 ~~~
-./gitopperctl state rollback @localhost grafana-server 8df1b3db679253ba501d594de285cc3e9ed308ed
+./gitopperctl do rollback @localhost grafana-server 8df1b3db679253ba501d594de285cc3e9ed308ed
 ~~~
 
 - check
@@ -84,7 +84,7 @@ SERVICE         HASH      STATE     INFO                                      SI
 grafana-server  606eb576  ROLLBACK  8df1b3db679253ba501d594de285cc3e9ed308ed  2022-11-18 13:28:42.619731556 +0000 UTC
 ~~~
 
-- check state, rollback done. Now state is FREEZE
+- check do, rollback done. Now state is FREEZE
 
 ~~~
 ./gitopperctl list service @localhost grafana-server
@@ -95,7 +95,7 @@ grafana-server  8df1b3db  FREEZE  ROLLBACK: 8df1b3db679253ba501d594de285cc3e9ed3
 - unfreeze and let it pick up changes again
 
 ~~~
-./gitopperctl state unfreeze @localhost grafana-server
+./gitopperctl do unfreeze @localhost grafana-server
 ~~~
 
 - check the service

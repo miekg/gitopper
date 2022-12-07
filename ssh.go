@@ -58,12 +58,12 @@ func newRouter(c Config, hosts []string) ssh.Handler {
 }
 
 var routes = map[string]func(Config, ssh.Session, []string){
-	"/list/machine":   ListMachines,
-	"/list/service":   ListService,
-	"/state/freeze":   FreezeService,
-	"/state/unfreeze": UnfreezeService,
-	"/state/rollback": RollbackService,
-	"/state/pull":     PullService,
+	"/list/machine": ListMachines,
+	"/list/service": ListService,
+	"/do/freeze":    FreezeService,
+	"/do/unfreeze":  UnfreezeService,
+	"/do/rollback":  RollbackService,
+	"/do/pull":      PullService,
 }
 
 func writeAndExit(s ssh.Session, data []byte, err error) {

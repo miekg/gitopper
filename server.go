@@ -30,6 +30,7 @@ type Service struct {
 	Mount    string // Concatenated with server.Service this will be the directory where the git repo is checked out.
 	Dirs     []Dir  // How to map our local directories to the git repository.
 
+	pullnow      chan struct{} // do an on demand pull
 	state        State
 	stateInfo    string    // Extra info some states carry.
 	stateStamp   time.Time // When did state change (UTC).
@@ -117,6 +118,7 @@ func (s *Service) merge(global Global) *Service {
 	if s.Branch == "" {
 		s.Branch = "main"
 	}
+	s.pullnow = make(chan struct{}) // TODO(miek): newService would be a better place for time.
 	return s
 }
 
@@ -154,6 +156,7 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 
 		select {
 		case <-time.After(jitter(duration)):
+		case <-s.pullnow:
 		case <-ctx.Done():
 			return
 		}

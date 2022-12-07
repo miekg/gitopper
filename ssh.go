@@ -63,6 +63,7 @@ var routes = map[string]func(Config, ssh.Session, []string){
 	"/state/freeze":   FreezeService,
 	"/state/unfreeze": UnfreezeService,
 	"/state/rollback": RollbackService,
+	"/state/pull":     PullService,
 }
 
 func writeAndExit(s ssh.Session, data []byte, err error) {
@@ -182,6 +183,23 @@ func RollbackService(c Config, s ssh.Session, hosts []string) {
 	for _, serv := range myServices(c, target, hosts) {
 		serv.SetState(StateRollback, hash)
 		log.Infof("Machine %q, service %q set to %s", serv.Machine, serv.Service, StateRollback)
+		io.WriteString(s, http.StatusText(http.StatusOK))
+		s.Exit(0)
+		return
+	}
+	io.WriteString(s, http.StatusText(http.StatusNotFound))
+	s.Exit(http.StatusNotFound)
+}
+
+func PullService(c Config, s ssh.Session, hosts []string) {
+	if len(s.Command()) < 2 {
+		s.Exit(http.StatusNotAcceptable)
+		return
+	}
+	target := s.Command()[1]
+	for _, serv := range myServices(c, target, hosts) {
+		log.Infof("Machine %q, service %q set to pull now", serv.Machine, serv.Service)
+		serv.pullnow <- struct{}{}
 		io.WriteString(s, http.StatusText(http.StatusOK))
 		s.Exit(0)
 		return

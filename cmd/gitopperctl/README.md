@@ -40,7 +40,8 @@ Freezing (make it stop updating to the latest commit), until a unfreeze:
 ./gitopperctl state unfreeze @<host> <service>
 ~~~
 
-Rolling back to a previous commit, hash needs to be full length:
+Rolling back to a previous commit, hash needs to be a valid hexadecimal value (meaning it must be of
+even length):
 
 ~~~
 ./gitopperctl state rollback @<host> <service> <hash>

@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -41,6 +42,7 @@ type Service struct {
 type Dir struct {
 	Local string // The directory on the local filesystem.
 	Link  string // The subdirectory inside the git repo to map to.
+	File  bool   // If true Local and Link are considered files.
 }
 
 // Current State of a service.
@@ -255,22 +257,42 @@ func (s *Service) bindmount() (int, error) {
 		gitdir := path.Join(s.Mount, s.Service)
 		gitdir = path.Join(gitdir, d.Link)
 
+		logtype := "Directory"
+		if d.File {
+			logtype = "File"
+		}
+
 		if !exists(d.Local) {
-			if err := os.MkdirAll(d.Local, 0775); err != nil {
-				log.Errorf("Directory %q can not be created", d.Local)
-				return 0, fmt.Errorf("failed to create directory %q: %s", d.Local, err)
+			switch d.File {
+			case false:
+				if err := os.MkdirAll(d.Local, 0775); err != nil {
+					log.Errorf("Directory %q can not be created", d.Local)
+					return 0, fmt.Errorf("failed to create directory %q: %s", d.Local, err)
+				}
+			case true:
+				if err := os.MkdirAll(path.Dir(d.Local), 0775); err != nil {
+					log.Errorf("Directory %q can not be created", path.Dir(d.Local))
+					return 0, fmt.Errorf("failed to create directory %q: %s", path.Dir(d.Local), err)
+				}
+				file, err := os.Create(d.Local)
+				if err != nil {
+					log.Errorf("File %q, can not be created", d.Local)
+					return 0, fmt.Errorf("failed to create file %q: %s", d.Local, err)
+				}
+				file.Close()
+
 			}
 			if os.Geteuid() == 0 { // set d.Local to the correct owner, if we are root
 				uid, gid := osutil.User(s.User)
 				if err := os.Chown(d.Local, int(uid), int(gid)); err != nil {
-					log.Errorf("Directory %q can not be chown-ed to %q: %s", d.Local, s.User, err)
-					return 0, fmt.Errorf("failed to chown directory %q to %q: %s", d.Local, s.User, err)
+					log.Errorf("%s %q can not be chown-ed to %q: %s", logtype, d.Local, s.User, err)
+					return 0, fmt.Errorf("failed to chown %s %q to %q: %s", strings.ToLower(logtype), d.Local, s.User, err)
 				}
 			}
 		}
 
 		if ok, err := mountinfo.Mounted(d.Local); err == nil && ok {
-			log.Infof("Directory %q is already mounted", d.Local)
+			log.Infof("%s %q is already mounted", logtype, d.Local)
 			continue
 		}
 

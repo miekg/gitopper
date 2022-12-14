@@ -99,9 +99,10 @@ service = "prometheus"        # service identifier, if it's used by systemd it m
 package = "prometheus"        # as used by package mgmt, may be empty (not implemented yet)
 user = "prometheus"           # do the check out with this user
 action = "reload"             # call systemctl <action> <service> when the git repo changes, may be empty
-# what directories from the repo to mount under the local directories
+# what directories or files from the repo to mount under the local directories
 dirs = [
     { local = "/etc/prometheus", link = "prometheus/etc" },   # prometheus/etc *in the repo* should be mounted under /etc/prometheus
+    { local = "/etc/caddy/Caddyfile", link = "caddy/etc/Caddyfile", file = true },   # caddy/etc/Caddyfile *in the repo* should be mounted under /etc/caddy/Caddyfile
 ]
 ~~~
 

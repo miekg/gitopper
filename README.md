@@ -94,11 +94,11 @@ keys =[
 # each managed service has an entry like this
 [[services]]
 machine = "prometheus"        # hostname of the machine, so a host knows when to pick this up.
-branch = "main"               # what branch to check out
 service = "prometheus"        # service identifier, if it's used by systemd it must be the systemd service name
+action = "reload"             # call systemctl <action> <service> when the git repo changes, may be empty
+branch = "main"               # what branch to check out
 package = "prometheus"        # as used by package mgmt, may be empty (not implemented yet)
 user = "prometheus"           # do the check out with this user
-action = "reload"             # call systemctl <action> <service> when the git repo changes, may be empty
 # what directories or files from the repo to mount under the local directories
 dirs = [
     { local = "/etc/prometheus", link = "prometheus/etc" },   # prometheus/etc *in the repo* should be mounted under /etc/prometheus
@@ -110,9 +110,26 @@ Note that `machine` above should match either the machine name ($HOSTNAME) or an
 give on the `-h` flag. This allows you to create services that run everywhere, by defining a service
 that have name (say) "localhost" and then deploying gitopper with `-h localhost` on every machine.
 
+Options for each service:
+
+- `machine`: the machine where this service should be active. By default `gitopper` will know the
+   current hostname, but multiple aliases may be given to it via the `-h` flag.
+- `service`: what systemd unit file is used to call `action` on. If service contains an `@` a
+  service template unit is assumed and gitopper will then run `systemctl enable <service>` to enable
+  the service template.
+- `action`: action to use when calling `systemctl <service>`. If empty no systemd command will be
+  issued when the repo changes.
+- `branch`: what branch to use in the checked out repo. Note different branches that use the *same*
+  repository on disk, will error on startup.
+- `package`: what package to install for this service. If empty, no package will be installed.
+- `user`: what user should the git repository belong to.
+- `dirs`: describe the mapping between directories and files in the repository and on the local
+  disk. `local` is the *on disk* name, and `link` is the *relative* path of the directory or file in
+  the git repo. If a single file is used, `file` should be set to true.
+
 ### How to Break It
 
-Moving to a new user, will break git pull, with an error like 'dubious ownership of reposiory'. If
+Moving to a new user, will break git pull, with an error like 'dubious ownership of repository'. If
 you want a different owner for a service, it's best to change the mount as well so you get a new
 repo. Gitopper is currently not smart enough to detect this and fix things on the fly.
 

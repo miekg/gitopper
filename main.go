@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -252,9 +253,12 @@ func run(exec *ExecContext) error {
 
 		if s.Package != "" {
 			if err := pkg.Install(s.Package); err != nil {
-				log.Warningf("Service %q, error installing package %q: %s", s.Service, s.Package, err)
-				continue // skip this, or continue, if continue and with the bind mounts the future pkg install might also break...
-				// or fatal error??
+				log.Fatalf("Service %q, error installing package %q: %s", s.Service, s.Package, err)
+			}
+		}
+		if strings.Contains(s.Service, "@") {
+			if err := s.enable(); err != nil {
+				log.Fatalf("Service %q, error enabling instance template: %s", s.Service, err)
 			}
 		}
 

@@ -128,6 +128,8 @@ func main() {
 								return nil
 							}
 							tbl := table.New("SERVICE", "SYSTEMD", "UPSTREAM", "DIR", "LOCAL")
+							// we also do this in gitopper, keep this in sync with
+							// ../../main.go
 							for _, lc := range lc.ListConfigs {
 								for i := range lc.Dirs {
 									if i == 0 {

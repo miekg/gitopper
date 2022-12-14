@@ -135,6 +135,12 @@ func ListService(c Config, s ssh.Session, hosts []string) {
 }
 
 func ListConfig(c Config, s ssh.Session, hosts []string) {
+	lc := listConfigs(c, hosts)
+	data, err := json.Marshal(lc)
+	writeAndExit(s, data, err)
+}
+
+func listConfigs(c Config, hosts []string) proto.ListConfigs {
 	lc := proto.ListConfigs{ListConfigs: []proto.ListConfig{}}
 
 	for _, service := range c.Services {
@@ -160,8 +166,7 @@ func ListConfig(c Config, s ssh.Session, hosts []string) {
 
 		lc.ListConfigs = append(lc.ListConfigs, conf)
 	}
-	data, err := json.Marshal(lc)
-	writeAndExit(s, data, err)
+	return lc
 }
 
 func FreezeService(c Config, s ssh.Session, hosts []string) {

@@ -19,6 +19,7 @@ import (
 	"github.com/miekg/gitopper/ospkg"
 	"github.com/miekg/gitopper/osutil"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rodaine/table"
 	flag "github.com/spf13/pflag"
 	"go.science.ru.nl/log"
 )
@@ -32,6 +33,7 @@ type ExecContext struct {
 	Debug        bool
 	Restart      bool
 	Root         bool
+	Motd         bool
 	Duration     time.Duration
 	Upstream     string
 	Dir          string
@@ -56,6 +58,7 @@ func (exec *ExecContext) RegisterFlags(fs *flag.FlagSet) {
 	fs.BoolVarP(&exec.Restart, "restart", "r", false, "send SIGHUP when config changes")
 	fs.BoolVarP(&exec.Root, "root", "o", true, "require root permission, setting to false can aid in debugging")
 	fs.DurationVarP(&exec.Duration, "duration", "t", 5*time.Minute, "default duration between pulls")
+	fs.BoolVarP(&exec.Motd, "motd", "", false, "dump a gitopper list config table")
 
 	// bootstrap flags
 	fs.StringVarP(&exec.Upstream, "upstream", "U", "", "[bootstrapping] use this git repo")
@@ -197,6 +200,22 @@ func run(exec *ExecContext) error {
 
 	if err := c.Valid(); err != nil {
 		return fmt.Errorf("validating config: %v", err)
+	}
+	if exec.Motd {
+		lc := listConfigs(c, exec.Hosts)
+		tbl := table.New("SERVICE", "SYSTEMD", "UPSTREAM", "DIR", "LOCAL")
+		// we also do this in gitopperclt, keep this in sync with cmd/gitopperctl/main.go
+		for _, lc := range lc.ListConfigs {
+			for i := range lc.Dirs {
+				if i == 0 {
+					tbl.AddRow(lc.Service, lc.Systemd, lc.Upstream, lc.Dirs[i], lc.Locals[i])
+					continue
+				}
+				tbl.AddRow("", "", "", lc.Dirs[i], lc.Locals[i])
+			}
+		}
+		tbl.Print()
+		return nil
 	}
 
 	if self != nil {

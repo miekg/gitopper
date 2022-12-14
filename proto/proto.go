@@ -22,4 +22,16 @@ type (
 		StateInfo   string `json:"stateinfo"`
 		StateChange string `json:"change"`
 	}
+
+	ListConfigs struct {
+		ListConfigs []ListConfig `json:"config"`
+	}
+
+	ListConfig struct {
+		Service  string   `json:"service"`
+		Upstream string   `json:"upstream"`
+		Systemd  string   `json:"systemd"`
+		Dirs     []string `json:"dir"`
+		Locals   []string `json:"local"`
+	}
 )

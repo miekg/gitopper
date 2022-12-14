@@ -106,6 +106,43 @@ func main() {
 							return nil
 						},
 					},
+					{
+						Name:    "config",
+						Aliases: []string{"c"},
+						Usage:   "list config @machine",
+						Action: func(ctx *cli.Context) error {
+							at, err := atMachine(ctx)
+							if err != nil {
+								return err
+							}
+							body, err := querySSH(ctx, at, "/list/config")
+							if err != nil {
+								return err
+							}
+							lc := proto.ListConfigs{}
+							if err := json.Unmarshal(body, &lc); err != nil {
+								return err
+							}
+							if ctx.Bool("m") {
+								fmt.Print(string(body))
+								return nil
+							}
+							tbl := table.New("SERVICE", "SYSTEMD", "UPSTREAM", "DIR", "LOCAL")
+							// we also do this in gitopper, keep this in sync with
+							// ../../main.go
+							for _, lc := range lc.ListConfigs {
+								for i := range lc.Dirs {
+									if i == 0 {
+										tbl.AddRow(lc.Service, lc.Systemd, lc.Upstream, lc.Dirs[i], lc.Locals[i])
+										continue
+									}
+									tbl.AddRow("", "", "", lc.Dirs[i], lc.Locals[i])
+								}
+							}
+							tbl.Print()
+							return nil
+						},
+					},
 				},
 			},
 			{

@@ -240,10 +240,15 @@ func run(exec *ExecContext) error {
 
 	pkg := ospkg.New()
 	servCnt := 0
+	hostServices := map[string]struct{}{} // we can't have duplicate service name on a single machine.
 	for _, serv := range c.Services {
 		if !serv.forMe(exec.Hosts) {
 			continue
 		}
+		if _, ok := hostServices[serv.Service]; ok {
+			log.Fatalf("Service %q has a duplicate on these machines %v", serv.Service, exec.Hosts)
+		}
+		hostServices[serv.Service] = struct{}{}
 
 		servCnt++
 		s := serv.merge(c.Global)

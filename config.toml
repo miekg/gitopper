@@ -4,7 +4,6 @@ branch = "main"
 mount = "/tmp/gitopper"
 keys = [
 	{ path = "keys/miek_id_ed25519_gitopper.pub", ro = true },
-	{ path = "/local/home/miek/.ssh/id_ed25519_gitopper.pub"},
 ]
 
 [[services]]
@@ -15,15 +14,4 @@ package = "prometheus"
 action = "reload"
 dirs = [
 	{ local = "/etc/prometheus", link = "prometheus/etc" },
-]
-
-# docker compose needs to work with systemd template files
-[[services]]
-machine = "docker-test"
-service = "docker-compose@caddy"
-user = "docker"
-#package = "docker-compose"
-action = "reload"
-dirs = [
-	{ local = "/tmp/docker-compose.yml", link = "docker-compose/caddy/docker-compose.yml", file = true },
 ]

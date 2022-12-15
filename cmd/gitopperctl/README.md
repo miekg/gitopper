@@ -18,9 +18,8 @@ from the server.
 In order:
 
 1. List all machines defined in the config file for gitopper running on `<host>`.
-1. List all services that are controlled on `<host>`.
-1. List the configuration which service is controlled by what git repo on `<host>`.
-1. List a specific service on `<host>`.
+2. List all services that are controlled on `<host>`.
+3. List a specific service on `<host>`.
 
 Each will output a simple table with the information:
 

@@ -60,7 +60,6 @@ func newRouter(c Config, hosts []string) ssh.Handler {
 var routes = map[string]func(Config, ssh.Session, []string){
 	"/list/machine": ListMachines,
 	"/list/service": ListService,
-	"/list/config":  ListConfig,
 	"/do/freeze":    FreezeService,
 	"/do/unfreeze":  UnfreezeService,
 	"/do/rollback":  RollbackService,
@@ -132,41 +131,6 @@ func ListService(c Config, s ssh.Session, hosts []string) {
 	}
 	data, err := json.Marshal(ls)
 	writeAndExit(s, data, err)
-}
-
-func ListConfig(c Config, s ssh.Session, hosts []string) {
-	lc := listConfigs(c, hosts)
-	data, err := json.Marshal(lc)
-	writeAndExit(s, data, err)
-}
-
-func listConfigs(c Config, hosts []string) proto.ListConfigs {
-	lc := proto.ListConfigs{ListConfigs: []proto.ListConfig{}}
-
-	for _, service := range c.Services {
-		if !service.forMe(hosts) {
-			continue
-
-		}
-		conf := proto.ListConfig{
-			Service:  service.Service,
-			Upstream: service.Upstream,
-		}
-		if service.Action != "" {
-			conf.Systemd = service.Action
-		}
-		dirs := []string{}
-		locals := []string{}
-		for _, d := range service.Dirs {
-			dirs = append(dirs, d.Link)
-			locals = append(locals, d.Local)
-		}
-		conf.Dirs = dirs
-		conf.Locals = locals
-
-		lc.ListConfigs = append(lc.ListConfigs, conf)
-	}
-	return lc
 }
 
 func FreezeService(c Config, s ssh.Session, hosts []string) {

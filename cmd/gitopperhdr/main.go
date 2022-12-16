@@ -31,12 +31,16 @@ func main() {
 			if url == "" {
 				log.Fatal("Failed to get upstream origin URL")
 			}
+			branch := gc.BranchCurrent()
+			if branch == "" {
+				log.Fatal("Failed to get current branch")
+			}
 			relpath := gc.LsFile(file)
 			if relpath == "" {
 				log.Warningf("Failed to get relative path for: %q, omitting file path from output", file)
 			}
 			comment := ctx.String("p")
-			fmt.Printf(Header, comment, comment, transformURL(ctx, url, relpath))
+			fmt.Printf(Header, comment, comment, transformURL(ctx, url, relpath, branch))
 			return nil
 		},
 	}
@@ -48,7 +52,7 @@ func main() {
 
 // transformURL will transform a git@ url to a https:// one, taking into gitlab vs github into account. The returns
 // string is a valid URL that points to the file in relpath.
-func transformURL(ctx *cli.Context, url, relpath string) string {
+func transformURL(ctx *cli.Context, url, relpath, branch string) string {
 	// github: https://github.com/miekg/gitopper/blob/main/proto/proto.go
 	// gitlab: https://gitlab.science.ru.nl/cncz/go/-/blob/main/cmd/graaf/graaf.go
 	//
@@ -67,9 +71,9 @@ func transformURL(ctx *cli.Context, url, relpath string) string {
 		return url
 	}
 	// url has been normalized, add path
-	sep := "/-/blob/"
+	sep := "/-/blob/" + branch + "/"
 	if strings.Contains(url, "//github.com/") {
-		sep = "/blob/"
+		sep = "/blob/" + branch + "/"
 	}
 	return url + sep + relpath
 }

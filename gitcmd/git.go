@@ -165,3 +165,39 @@ func (g *Git) Stash() error {
 }
 
 func (g *Git) Repo() string { return g.mount }
+
+// these methods below are only used in gitopperhdr.
+
+// OriginURL returns the value of git config --get remote.origin.url
+// The working directory for the git command is set to PWD.
+func (g *Git) OriginURL() string {
+	wd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	g.cwd = wd
+	defer func() { g.cwd = "" }()
+
+	out, err := g.run("config", "--get", "remote.origin.url")
+	if err != nil {
+		return ""
+	}
+	return string(out)
+}
+
+// LsFile return the relative path of name inside the git repository.
+// The working directory for the git command is set to PWD.
+func (g *Git) LsFile(name string) string {
+	wd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	g.cwd = wd
+	defer func() { g.cwd = "" }()
+
+	out, err := g.run("ls-files", "--full-name", name)
+	if err != nil {
+		return ""
+	}
+	return string(out)
+}

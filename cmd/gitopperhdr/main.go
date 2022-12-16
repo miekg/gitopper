@@ -68,7 +68,7 @@ func transformURL(ctx *cli.Context, url, relpath string) string {
 	}
 	// url has been normalized, add path
 	sep := "/-/blob/"
-	if strings.Contains(url, "github.com") {
+	if strings.Contains(url, "//github.com/") {
 		sep = "/blob/"
 	}
 	return url + sep + relpath

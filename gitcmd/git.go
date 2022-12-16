@@ -201,3 +201,20 @@ func (g *Git) LsFile(name string) string {
 	}
 	return string(out)
 }
+
+// BranchCurrent shows the current branch.
+// The working directory for the git command is set to PWD.
+func (g *Git) BranchCurrent() string {
+	wd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	g.cwd = wd
+	defer func() { g.cwd = "" }()
+
+	out, err := g.run("branch", "--show-current")
+	if err != nil {
+		return ""
+	}
+	return string(out)
+}

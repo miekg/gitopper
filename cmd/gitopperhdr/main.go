@@ -33,7 +33,7 @@ func main() {
 			}
 			branch := gc.BranchCurrent()
 			if branch == "" {
-				log.Fatal("Failed to current branch")
+				log.Fatal("Failed to get current branch")
 			}
 			relpath := gc.LsFile(file)
 			if relpath == "" {

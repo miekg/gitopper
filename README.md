@@ -76,6 +76,24 @@ would be nice to have this state in the git repo somehow?).
 ROLLBACK is a transient state and quickly moves to FREEZE, unless something goes wrong then it
 becomes BROKEN, or DIFF depending on what goes wrong (systemd, or git respectively).
 
+~~~
+ +-------------------------+
+ |                         |
+ v                         |
+*OK -------> ROLLBACK ---> FREEZE
+ |          /    \         |
+ |         /      \        v
+ |        |        |       |
+ |        v        v       |
+ |      BROKEN     DIFF    |
+ |        |         |      |
+ |        |         |      |
+ +--------+---------+------+
+~~~
+
+- `*OK` is the start state
+- from `OK` and `FREEZE` we can still end up in `BROKEN` and `FREEZE` and vice versa.
+
 ## Config File
 
 ~~~ toml

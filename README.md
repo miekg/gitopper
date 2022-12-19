@@ -70,8 +70,8 @@ would be nice to have this state in the git repo somehow?).
 * `ROLLBACK`: everything is running, but we're not tracking upstream *and* we're pinned to an older
   commit. This state is quickly followed by FREEZE if we were successful rolling back, otherwise
   BROKEN (systemd error)  of DIFF (git error)
-* `BROKEN`: something with the service is broken, we're still tracking upstream.
-* `DIFF`: the git repository can't be reconciled with upstream.
+* `BROKEN`: something with the service is broken, we're still tracking upstream. I.e. systemd error.
+* `DIFF`: the git repository can't be reconciled with upstream. I.e. git error.
 
 ROLLBACK is a transient state and quickly moves to FREEZE, unless something goes wrong then it
 becomes BROKEN, or DIFF depending on what goes wrong (systemd, or git respectively).

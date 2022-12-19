@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -53,6 +52,7 @@ const (
 	StateFreeze                // The service is locked to the current commit, no further updates are done.
 	StateRollback              // The service is rolled back and locked to that commit, no further updates are done.
 	StateBroken                // The service is broken, i.e. didn't start, systemctl error, etc.
+	StateDiff                  // The service's git repo can't be reconciled with upstream for some reason.
 )
 
 func (s State) String() string {
@@ -65,6 +65,8 @@ func (s State) String() string {
 		return "ROLLBACK"
 	case StateBroken:
 		return "BROKEN"
+	case StateDiff:
+		return "DIFF"
 	}
 	return ""
 }
@@ -76,14 +78,13 @@ func (s *Service) State() (State, string) {
 }
 
 func (s *Service) SetState(st State, info string) {
+	log.Infof("Service %q, setting to state: %s:s", s.Service, st)
 	s.Lock()
 	defer s.Unlock()
 	s.stateStamp = time.Now().UTC()
 	s.state = st
 	s.stateInfo = info
 
-	hashNum, _ := strconv.ParseFloat("0x"+s.hash+".p1", 64)
-	metricServiceHash.WithLabelValues(s.Service).Set(hashNum)
 	metricServiceState.WithLabelValues(s.Service).Set(float64(s.state))
 	metricServiceTimestamp.WithLabelValues(s.Service).Set(float64(s.stateStamp.Unix()))
 }
@@ -167,7 +168,7 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 		if state == StateRollback && info != s.hash {
 			if err := gc.Rollback(info); err != nil {
 				log.Warningf("Service %q, error rollback repo %q to %q: %s", s.Service, s.Upstream, info, err)
-				s.SetState(StateBroken, fmt.Sprintf("error rolling back %q to %q: %s", s.Upstream, info, err))
+				s.SetState(StateDiff, fmt.Sprintf("error rolling back %q to %q: %s", s.Upstream, info, err))
 				continue
 			}
 
@@ -189,7 +190,7 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 		changed, err := gc.Pull()
 		if err != nil {
 			log.Warningf("Service %q, error pulling repo %q: %s", s.Service, s.Upstream, err)
-			s.SetState(StateBroken, fmt.Sprintf("error pulling %q: %s", s.Upstream, err))
+			s.SetState(StateDiff, fmt.Sprintf("error pulling %q: %s", s.Upstream, err))
 			continue
 		}
 

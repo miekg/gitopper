@@ -69,14 +69,30 @@ would be nice to have this state in the git repo somehow?).
 * `FREEZE`: everything is running, but we're not tracking upstream.
 * `ROLLBACK`: everything is running, but we're not tracking upstream *and* we're pinned to an older
   commit. This state is quickly followed by FREEZE if we were successful rolling back, otherwise
-  BROKEN.
-* `BROKEN`: something with the service is broken, we're still tracking upstream.
+  BROKEN (systemd error)  of DIFF (git error)
+* `BROKEN`: something with the service is broken, we're still tracking upstream. I.e. systemd error.
+* `DIFF`: the git repository can't be reconciled with upstream. I.e. git error.
 
 ROLLBACK is a transient state and quickly moves to FREEZE, unless something goes wrong then it
-becomes BROKEN.
+becomes BROKEN, or DIFF depending on what goes wrong (systemd, or git respectively).
 
-If ROLLBACK stays in ROLLBACK for a longer period it means the commit it needs to rollback to can't
-be found.
+~~~
+ +-------------------------+
+ |                         |
+ v                         |
+*OK -------> ROLLBACK ---> FREEZE
+ |          /    \         |
+ |         /      \        v
+ |        |        |       |
+ |        v        v       |
+ |      BROKEN     DIFF    |
+ |        |         |      |
+ |        |         |      |
+ +--------+---------+------+
+~~~
+
+- `*OK` is the start state
+- from `OK` and `FREEZE` we can still end up in `BROKEN` and `FREEZE` and vice versa.
 
 ## Config File
 
@@ -154,9 +170,8 @@ table.
 
 The following metrics are exported:
 
-* gitopper_service_hash{"service"} \<hash\>
 * gitopper_service_state{"service"} \<state\>
-* gitopper_service_change_timestamp{"service"} \<epoch\>
+* gitopper_service_change_time_seconds{"service"} \<epoch\>
 * gitopper_machine_git_errors_total - total number of errors when running git.
 * gitopper_machine_git_ops_total - total number of git runs.
 
@@ -172,7 +187,7 @@ Gitopper has following exit codes:
 ## Bootstrapping
 
 There are a couple of options that allow gitopper to bootstrap itself *and* make gitopper to be
-managed by gitopper. Basically those options allow you to specificy a service on the command line.
+managed by gitopper. Basically those options allow you to specify a service on the command line.
 Gitopper will check out the repo and then proceed to read the config *in that repo* and setup
 everything from there.
 

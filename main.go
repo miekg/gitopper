@@ -271,7 +271,7 @@ func run(exec *ExecContext) error {
 		err := gc.Checkout()
 		if err != nil {
 			log.Warningf("Service %q, error pulling repo %q: %s", s.Service, s.Upstream, err)
-			s.SetState(StateBroken, fmt.Sprintf("error pulling %q: %s", s.Upstream, err))
+			s.SetState(StateDiff, fmt.Sprintf("error pulling %q: %s", s.Upstream, err))
 			continue
 		}
 

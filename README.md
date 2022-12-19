@@ -153,7 +153,7 @@ table.
 The following metrics are exported:
 
 * gitopper_service_state{"service"} \<state\>
-* gitopper_service_change_times_seconds{"service"} \<epoch\>
+* gitopper_service_change_time_seconds{"service"} \<epoch\>
 * gitopper_machine_git_errors_total - total number of errors when running git.
 * gitopper_machine_git_ops_total - total number of git runs.
 

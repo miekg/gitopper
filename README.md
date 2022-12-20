@@ -59,8 +59,8 @@ Then with cmd/gitopperctl/gitopperctl you can query the server:
 
 ## Services
 
-A service can be in 4 states: OK, FREEZE, ROLLBACK (which is a FREEZE to a previous commit) and
-BROKEN.
+A service can be in 5 states: OK, FREEZE, ROLLBACK (which is a FREEZE to a previous commit) and
+BROKEN/DIFF.
 
 These state are not carried over when gitopper crashes/stops (maybe we want this to be persistent,
 would be nice to have this state in the git repo somehow?).

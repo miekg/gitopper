@@ -46,65 +46,13 @@ func main() {
 						Name:    "machines",
 						Aliases: []string{"m"},
 						Usage:   "list machines @machine",
-						Action: func(ctx *cli.Context) error {
-							at, err := atMachine(ctx)
-							if err != nil {
-								return err
-							}
-							body, err := querySSH(ctx, at, "/list/machine")
-							if err != nil {
-								return err
-							}
-							lm := proto.ListMachines{}
-							if err := json.Unmarshal(body, &lm); err != nil {
-								return err
-							}
-							if ctx.Bool("m") {
-								fmt.Print(string(body))
-								return nil
-							}
-							tbl := table.New("#", "MACHINE", "ACTUAL")
-							for i, m := range lm.ListMachines {
-								tbl.AddRow(i, m.Machine, m.Actual)
-							}
-							tbl.Print()
-							return nil
-						},
+						Action:  cmdMachines,
 					},
 					{
 						Name:    "service",
 						Aliases: []string{"s"},
 						Usage:   "list service @machine [<service>]",
-						Action: func(ctx *cli.Context) error {
-							at, err := atMachine(ctx)
-							if err != nil {
-								return err
-							}
-							var body []byte
-							service := ctx.Args().Get(1)
-							if service != "" {
-								body, err = querySSH(ctx, at, "/list/service", service)
-							} else {
-								body, err = querySSH(ctx, at, "/list/service")
-							}
-							if err != nil {
-								return err
-							}
-							ls := proto.ListServices{}
-							if err := json.Unmarshal(body, &ls); err != nil {
-								return err
-							}
-							if ctx.Bool("m") {
-								fmt.Print(string(body))
-								return nil
-							}
-							tbl := table.New("#", "SERVICE", "HASH", "STATE", "INFO", "SINCE")
-							for i, ls := range ls.ListServices {
-								tbl.AddRow(i, ls.Service, ls.Hash, ls.State, ls.StateInfo, ls.StateChange)
-							}
-							tbl.Print()
-							return nil
-						},
+						Action:  cmdService,
 					},
 				},
 			},
@@ -117,73 +65,25 @@ func main() {
 						Name:    "freeze",
 						Aliases: []string{"f"},
 						Usage:   "do freeze @machine <service>",
-						Action: func(ctx *cli.Context) error {
-							at, err := atMachine(ctx)
-							if err != nil {
-								return err
-							}
-							service := ctx.Args().Get(1)
-							if service == "" {
-								return fmt.Errorf("need service")
-							}
-							_, err = querySSH(ctx, at, "/do/freeze", service)
-							return err
-						},
+						Action:  cmdFreeze,
 					},
 					{
 						Name:    "unfreeze",
 						Aliases: []string{"u"},
 						Usage:   "do unfreeze @machine <service>",
-						Action: func(ctx *cli.Context) error {
-							at, err := atMachine(ctx)
-							if err != nil {
-								return err
-							}
-							service := ctx.Args().Get(1)
-							if service == "" {
-								return fmt.Errorf("need service")
-							}
-							_, err = querySSH(ctx, at, "/do/unfreeze", service)
-							return err
-						},
+						Action:  cmdUnfreeze,
 					},
 					{
 						Name:    "rollback",
 						Aliases: []string{"r"},
 						Usage:   "do rollback @machine <service> <hash>",
-						Action: func(ctx *cli.Context) error {
-							at, err := atMachine(ctx)
-							if err != nil {
-								return err
-							}
-							service := ctx.Args().Get(1)
-							if service == "" {
-								return fmt.Errorf("need service")
-							}
-							hash := ctx.Args().Get(2)
-							if hash == "" {
-								return fmt.Errorf("need hash to rollback to")
-							}
-							_, err = querySSH(ctx, at, "/do/rollback", service, hash)
-							return err
-						},
+						Action:  cmdRollback,
 					},
 					{
 						Name:    "pull",
 						Aliases: []string{"p"},
 						Usage:   "do pull @machine <service>",
-						Action: func(ctx *cli.Context) error {
-							at, err := atMachine(ctx)
-							if err != nil {
-								return err
-							}
-							service := ctx.Args().Get(1)
-							if service == "" {
-								return fmt.Errorf("need service")
-							}
-							_, err = querySSH(ctx, at, "/do/pull", service)
-							return err
-						},
+						Action:  cmdPull,
 					},
 				},
 			},
@@ -193,4 +93,116 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func cmdPull(ctx *cli.Context) error {
+	at, err := atMachine(ctx)
+	if err != nil {
+		return err
+	}
+	service := ctx.Args().Get(1)
+	if service == "" {
+		return fmt.Errorf("need service")
+	}
+	_, err = querySSH(ctx, at, "/do/pull", service)
+	return err
+}
+
+func cmdRollback(ctx *cli.Context) error {
+	at, err := atMachine(ctx)
+	if err != nil {
+		return err
+	}
+	service := ctx.Args().Get(1)
+	if service == "" {
+		return fmt.Errorf("need service")
+	}
+	hash := ctx.Args().Get(2)
+	if hash == "" {
+		return fmt.Errorf("need hash to rollback to")
+	}
+	_, err = querySSH(ctx, at, "/do/rollback", service, hash)
+	return err
+}
+
+func cmdUnfreeze(ctx *cli.Context) error {
+	at, err := atMachine(ctx)
+	if err != nil {
+		return err
+	}
+	service := ctx.Args().Get(1)
+	if service == "" {
+		return fmt.Errorf("need service")
+	}
+	_, err = querySSH(ctx, at, "/do/unfreeze", service)
+	return err
+}
+
+func cmdFreeze(ctx *cli.Context) error {
+	at, err := atMachine(ctx)
+	if err != nil {
+		return err
+	}
+	service := ctx.Args().Get(1)
+	if service == "" {
+		return fmt.Errorf("need service")
+	}
+	_, err = querySSH(ctx, at, "/do/freeze", service)
+	return err
+}
+
+func cmdService(ctx *cli.Context) error {
+	at, err := atMachine(ctx)
+	if err != nil {
+		return err
+	}
+	var body []byte
+	service := ctx.Args().Get(1)
+	if service != "" {
+		body, err = querySSH(ctx, at, "/list/service", service)
+	} else {
+		body, err = querySSH(ctx, at, "/list/service")
+	}
+	if err != nil {
+		return err
+	}
+	ls := proto.ListServices{}
+	if err := json.Unmarshal(body, &ls); err != nil {
+		return err
+	}
+	if ctx.Bool("m") {
+		fmt.Print(string(body))
+		return nil
+	}
+	tbl := table.New("#", "SERVICE", "HASH", "STATE", "INFO", "SINCE")
+	for i, ls := range ls.ListServices {
+		tbl.AddRow(i, ls.Service, ls.Hash, ls.State, ls.StateInfo, ls.StateChange)
+	}
+	tbl.Print()
+	return nil
+}
+
+func cmdMachines(ctx *cli.Context) error {
+	at, err := atMachine(ctx)
+	if err != nil {
+		return err
+	}
+	body, err := querySSH(ctx, at, "/list/machine")
+	if err != nil {
+		return err
+	}
+	lm := proto.ListMachines{}
+	if err := json.Unmarshal(body, &lm); err != nil {
+		return err
+	}
+	if ctx.Bool("m") {
+		fmt.Print(string(body))
+		return nil
+	}
+	tbl := table.New("#", "MACHINE", "ACTUAL")
+	for i, m := range lm.ListMachines {
+		tbl.AddRow(i, m.Machine, m.Actual)
+	}
+	tbl.Print()
+	return nil
 }

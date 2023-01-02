@@ -65,7 +65,7 @@ func (c Config) Valid() error {
 
 // trackConfig will sha1 sum the contents of file and if it differs from previous runs, will SIGHUP ourselves so we
 // exist with status code 2, which in turn will systemd restart us again.
-func trackConfig(ctx context.Context, file string, done chan os.Signal) {
+func trackConfig(ctx context.Context, file string, done chan<- os.Signal) {
 	hash := ""
 	for {
 		select {

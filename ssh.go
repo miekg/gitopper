@@ -199,7 +199,7 @@ func PullService(c Config, s ssh.Session, hosts []string) {
 	target := s.Command()[1]
 	for _, serv := range myServices(c, target, hosts) {
 		log.Infof("Machine %q, service %q set to pull now", serv.Machine, serv.Service)
-		serv.pullnow <- struct{}{}
+		serv.signalPullNow()
 		io.WriteString(s, http.StatusText(http.StatusOK))
 		s.Exit(0)
 		return

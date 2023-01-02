@@ -30,12 +30,13 @@ type Service struct {
 	Mount    string // Concatenated with server.Service this will be the directory where the git repo is checked out.
 	Dirs     []Dir  // How to map our local directories to the git repository.
 
-	pullnow      chan struct{} // do an on demand pull
-	state        State
-	stateInfo    string    // Extra info some states carry.
-	stateStamp   time.Time // When did state change (UTC).
-	hash         string    // Git hash of the current git checkout.
-	sync.RWMutex           // Protects state and friends.
+	pullNow chan struct{} // do an on demand pull
+
+	mu         sync.RWMutex
+	state      State
+	stateInfo  string    // Extra info some states carry.
+	stateStamp time.Time // When did state change (UTC).
+	hash       string    // Git hash of the current git checkout.
 }
 
 type Dir struct {
@@ -72,15 +73,15 @@ func (s State) String() string {
 }
 
 func (s *Service) State() (State, string) {
-	s.RLock()
-	defer s.RUnlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	return s.state, s.stateInfo
 }
 
 func (s *Service) SetState(st State, info string) {
 	log.Infof("Service %q, setting to state: %s:s", s.Service, st)
-	s.Lock()
-	defer s.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.stateStamp = time.Now().UTC()
 	s.state = st
 	s.stateInfo = info
@@ -90,21 +91,25 @@ func (s *Service) SetState(st State, info string) {
 }
 
 func (s *Service) Hash() string {
-	s.RLock()
-	defer s.RUnlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	return s.hash
 }
 
 func (s *Service) SetHash(h string) {
-	s.Lock()
-	defer s.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.hash = h
 }
 
 func (s *Service) Change() time.Time {
-	s.RLock()
-	defer s.RUnlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	return s.stateStamp
+}
+
+func (s *Service) signalPullNow() {
+	s.pullNow <- struct{}{}
 }
 
 // merge merges anything defined in global into s when s doesn't specify it and returns the new Service.
@@ -121,7 +126,8 @@ func (s *Service) merge(global Global) *Service {
 	if s.Branch == "" {
 		s.Branch = "main"
 	}
-	s.pullnow = make(chan struct{}) // TODO(miek): newService would be a better place for time.
+	// TODO: Examine whether replacing pullNow needs to occur with synchronization due to reads.
+	s.pullNow = make(chan struct{}) // TODO(miek): newService would be a better place for time.
 	return s
 }
 
@@ -159,7 +165,7 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 
 		select {
 		case <-time.After(jitter(duration)):
-		case <-s.pullnow:
+		case <-s.pullNow:
 		case <-ctx.Done():
 			return
 		}
@@ -248,8 +254,8 @@ func (s *Service) SetBoot() {
 	// Testing show this is the string returned: Mon 2022-11-21 09:39:59 CET, so parse that into a time.Time
 	t, err := time.Parse("Mon 2006-01-02 15:04:05 MST", string(out))
 	if err == nil { // on succes
-		s.Lock()
-		defer s.Unlock()
+		s.mu.Lock()
+		defer s.mu.Unlock()
 		s.stateStamp = t.UTC()
 	}
 }

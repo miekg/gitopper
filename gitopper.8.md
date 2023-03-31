@@ -34,13 +34,59 @@ The Git repository that you are using to provision the services must have at lea
 Gitopper will install packages if told to do so. It will not upgrade or downgrade them, assuming
 there is a better way of doing those.
 
-The following features are available:
+The remote interface of gitopper uses SSH keys for authentication, this hopefully helps to fit in,
+in a sysadmin organisation.
+
+The following features are implemented:
 
 - *Metrics*: are included see below, they export a Git hash, so a rollout can be tracked.
 - *Diff detection*: possible using the metrics or gitopperctl.
 - *Out of band rollbacks*: use gitopperctl to bypass the normal Git workflow.
-- *No client side processing*: files are used as the are in the Git repo.
+- *No client side processing*: files are used as they are in the Git repo.
 - *Canarying*: give a service a different branch to check out.
+
+The options are:
+
+**-h, --hosts strings**
+:  hosts (comma separated) to impersonate, local hostname is always added
+
+**-c, --config string**
+:  config file to read
+
+**-s, --ssh string**
+:  ssh address to listen on (default ":2222")
+
+**-m, --metric string**
+:  http metrics address to listen on (default ":9222")
+
+**-d, --debug**
+:  enable debug logging
+
+**-r, --restart**
+:   send SIGHUP to ourselves when config changes
+
+**-o, --root**
+:  require root permission, setting to false can aid in debugging (default true)
+
+**-t, --duration duration**
+:  default duration between pulls (default 5m0s)
+
+For bootstrapping gitopper itself the following options are available:
+
+**-U, --upstream string**
+:  use this git repo to clone and to bootstrap from
+
+**-D, --directory string**
+:  directory to sparse checkout (default "gitopper")
+
+**-B, --branch string**
+:   check out in this branch (default "main")
+
+**-M, --mount string**
+:   check out into this directory, -c is relative to this directory
+
+**-P, --pull**
+:   pull (update) the git repo to the newest version before starting
 
 ## Quick Start
 
@@ -70,13 +116,14 @@ dirs = [
 ~~~
 
 And things should work then. I.e. in /etc/prometheus you should see the content of the
-*miekg/gitopper-config* repository.
+*miekg/gitopper-config* repository. Note that the prometheus package is installed, because `package`
+is mentioned in the config file.
 
 The checked out git repo in /tmp/prometheus should _only_ contain the prometheus directory thanks to
 the sparse checkout. Changes made to any other subdirectory in that repo do not trigger a prometheus
 reload.
 
-Then with gitopperctl (8) you can query the server:
+Then with gitopperctl(8) you can query the server:
 
 ~~~
 ./gitopperctl -i <path-to-your-key> list service @localhost
@@ -179,7 +226,7 @@ repo. Gitopper is currently not smart enough to detect this and fix things on th
 ## Interface
 
 Gitopper opens two ports: 9222 for metrics and 2222 for the rest-protocol-over-SSH. For any
-interaction with gitopper over this port you're key must be configured for it.
+interaction with gitopper over this port your key must be configured for it.
 
 The following services are implemented:
 
@@ -190,7 +237,7 @@ The following services are implemented:
 * Unfreeze a service, i.e. to let it pull again.
 * Rollback a service to a specific commit.
 
-For each of these the client will execute a "command" and will parse the returned json into a nice
+For each of these gitopperctl(8) will execute a "command" and will parse the returned JSON into a nice
 table.
 
 ## Metrics
@@ -224,15 +271,15 @@ I.e.:
 ... -c config.toml -U https://github.com/miekg/gitopper-config -D gitopper -M /tmp/
 ~~~
 
-Will sparse check out (only the `gitopper` (-D flag) directory) of the repo *gitopper-config* (-U flag)
-in /tmp/gitopper (-M flag, internally '/gitopper' is added) and will then proceed to parse the
+Will sparse check out (only the `gitopper` (-D flag) directory) of the repo *gitopper-config* (-U
+flag) in /tmp/gitopper (-M flag, internally '/gitopper' is added) and will then proceed to parse the
 config file /tmp/gitopper/gitopper/config.toml and proceed with a normal startup.
 
 Note this setup implies that you *must* place config.toml *inside* a `gitopper` directory, just as
 the other services must have their own subdirectories, gitopper needs one too.
 
 The gitopper service self is *also* added to the managed services which you can inspect with
-gitopperctl.
+gitopperctl(8).
 
 Any keys that have *relative* paths, will also be changed to key inside this Git managed directory
 and pick up keys *from that repo*.
@@ -241,58 +288,6 @@ The `-P` flag can be given to pull the repository even if it already exists, som
 the newest version to properly bootstrap. For normal services the "git pull" routine will
 automatically rectify it and restart the service.
 
-## Client
-
-A client is included in cmd/gitopperctl. It has its own README.md.
-
-## Authentication
-
-Authentication uses SSH, so it fits in with the rest of the infrastructure.
-
-
-Options are:
-
--h, --hosts strings
-:  hosts (comma separated) to impersonate, local hostname is always added
-
--c, --config string
-:  config file to read
-
--s, --ssh string
-:  ssh address to listen on (default ":2222")
-
--m, --metric string
-:  http metrics address to listen on (default ":9222")
-
--d, --debug
-:  enable debug logging
-
--r, --restart
-:   send SIGHUP to ourselves when config changes
-
--o, --root
-:  require root permission, setting to false can aid in debugging (default true)
-
--t, --duration duration
-:  default duration between pulls (default 5m0s)
-
-For bootstrapping gitopper itself the following options are available:
-
--U, --upstream string
-:  use this git repo to clone and to bootstrap from
-
--D, --directory string
-:  directory to sparse checkout (default "gitopper")
-
--B, --branch string
-:   check out in this branch (default "main")
-
--M, --mount string
-:   check out into this directory, -c is relative to this directory
-
--P, --pull
-:   pull (update) the git repo to the newest version before starting
-
 ## See Also
 
-See [this design doc](https://miek.nl/2022/november/15/provisioning-services/).
+See [this design doc](https://miek.nl/2022/november/15/provisioning-services/), and gitopperctl(8).

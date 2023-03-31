@@ -18,7 +18,7 @@ gitopperhdr - output lines telling where to edit the file managed by gitopper
 ## Description
 
 This little command outputs a few lines that can be inserted into any file managed by gitopper. It
-shows the upstream repo where edits can be done. If that url contains github.com it uses GitHub's
+shows the upstream repo where edits can be done. If that URL contains "github.com" it uses GitHub's
 way of pointing to files in a repo, otherwise GitLab is assumed. This command must be called while
 sitting inside a git repository.
 
@@ -32,7 +32,7 @@ Currently it outputs (in English, Dutch is also an option):
 Options are:
 
 **-p**
-: set comment character, default to `#`
+: set comment character, defaults to `#`
 
 **-l**
 : set language, `en` is the default, the other supported value is `nl` for Dutch.

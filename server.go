@@ -177,8 +177,11 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 				s.SetState(StateDiff, fmt.Sprintf("error rolling back %q to %q: %s", s.Upstream, info, err))
 				continue
 			}
-
-			if err := s.systemctl(); err != nil {
+			if rerr := s.reload(); rerr != nil {
+				log.Warningf("Service %q, error running systemctl daemon-reload: %s", s.Service, rerr)
+				s.SetState(StateBroken, fmt.Sprintf("error running systemctl daemon-reload %q: %s", s.Upstream, rerr))
+				continue
+			} else if err := s.systemctl(); err != nil {
 				log.Warningf("Service %q, error running systemctl: %s", s.Service, err)
 				s.SetState(StateBroken, fmt.Sprintf("error running systemctl %q: %s", s.Upstream, err))
 				continue
@@ -209,12 +212,23 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 		s.SetState(state, info)
 
 		log.Infof("Service %q, diff in repo %q, pinging it", s.Service, s.Upstream)
-		if err := s.systemctl(); err != nil {
+		if rerr := s.reload(); rerr != nil {
+			log.Warningf("Service %q, error running systemctl daemon-reload: %s", s.Service, rerr)
+			s.SetState(StateBroken, fmt.Sprintf("error running systemctl daemon-reload %q: %s", s.Upstream, rerr))
+			continue
+		} else if err := s.systemctl(); err != nil {
 			log.Warningf("Service %q, error running systemctl: %s", s.Service, err)
 			s.SetState(StateBroken, fmt.Sprintf("error running systemctl %q: %s", s.Upstream, err))
 			continue
 		}
 	}
+}
+
+func (s *Service) reload() error {
+	ctx := context.TODO()
+	cmd := exec.CommandContext(ctx, "systemctl", "daemon-reload")
+	log.Infof("running %v", cmd.Args)
+	return cmd.Run()
 }
 
 func (s *Service) systemctl() error {

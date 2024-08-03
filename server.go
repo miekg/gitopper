@@ -226,7 +226,7 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 
 func (s *Service) reload() error {
 	ctx := context.TODO()
-	cmd := exec.CommandContext(ctx, "systemctl", "daemon-reload", s.Service)
+	cmd := exec.CommandContext(ctx, "systemctl", "daemon-reload")
 	log.Infof("running %v", cmd.Args)
 	return cmd.Run()
 }

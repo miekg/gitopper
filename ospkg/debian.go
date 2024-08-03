@@ -1,6 +1,7 @@
 package ospkg
 
 import (
+	"os"
 	"os/exec"
 
 	"go.science.ru.nl/log"
@@ -16,6 +17,9 @@ const aptGetCommand = "/usr/bin/apt-get"
 func (p *DebianInstaller) Install(pkg string) error {
 	args := []string{"-qq", "--assume-yes", "--no-install-recommends", "install", pkg}
 	installCmd := exec.Command(aptGetCommand, args...)
+	installCmd.Env = append(os.Environ(),
+		"DEBIAN_FRONTEND=noninteractive",
+	)
 	out, err := installCmd.CombinedOutput()
 	if err != nil {
 		log.Warningf("Install failed: %s", out)

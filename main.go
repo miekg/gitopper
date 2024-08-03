@@ -287,7 +287,10 @@ func run(exec *ExecContext) error {
 		// Restart any services as they see new files in their bindmounts. Do this here, because we can't be
 		// sure there is an update to a newer commit that would also kick off a restart.
 		if mounts > 0 {
-			if err := s.systemctl(); err != nil {
+			if rerr := s.reload(); rerr != nil {
+				log.Warningf("Service %q, error running systemctl daemon-reload: %s", s.Service, rerr)
+				s.SetState(StateBroken, fmt.Sprintf("error running systemctl daemon-reload %q: %s", s.Upstream, rerr))
+			} else if err := s.systemctl(); err != nil {
 				log.Warningf("Service %q, error running systemctl: %s", s.Service, err)
 				s.SetState(StateBroken, fmt.Sprintf("error running systemctl %q: %s", s.Upstream, err))
 				// no continue; maybe git pull will make this work later

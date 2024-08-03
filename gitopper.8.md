@@ -136,7 +136,7 @@ Then with gitopperctl(8) you can query the server:
 A service can be in 5 states: OK, FREEZE, ROLLBACK (which is a FREEZE to a previous commit) and
 BROKEN/DIFF.
 
-These state are not carried over when gitopper crashes/stops (maybe we want this to be persistent,
+These states are not carried over when gitopper crashes/stops (maybe we want this to be persistent,
 would be nice to have this state in the git repo somehow?).
 
 * `OK`: everything is running and we're tracking upstream.
@@ -171,7 +171,7 @@ becomes BROKEN, or DIFF depending on what goes wrong (systemd, or git respective
 ## Config File
 
 ~~~ toml
-# global options are applied if a service doens't list them
+# global options are applied if a service doesn't list them
 [global]
 upstream = "https://github.com/miekg/gitopper-config"  # repository where to download from
 mount = "/tmp"                                     # directory where to download to, mount+service is used as path

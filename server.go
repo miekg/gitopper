@@ -177,6 +177,11 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 				s.SetState(StateDiff, fmt.Sprintf("error rolling back %q to %q: %s", s.Upstream, info, err))
 				continue
 			}
+			if _, err := s.bindmount(); err != nil {
+				log.Warningf("Service %q, error setting up bind mounts for %q: %s", s.Service, s.Upstream, err)
+				s.SetState(StateBroken, fmt.Sprintf("error setting up bind mounts repo %q: %s", s.Upstream, err))
+				continue
+			}
 			if rerr := s.reload(); rerr != nil {
 				log.Warningf("Service %q, error running systemctl daemon-reload: %s", s.Service, rerr)
 				s.SetState(StateBroken, fmt.Sprintf("error running systemctl daemon-reload %q: %s", s.Upstream, rerr))

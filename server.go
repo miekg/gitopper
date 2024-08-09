@@ -177,6 +177,11 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 				s.SetState(StateDiff, fmt.Sprintf("error rolling back %q to %q: %s", s.Upstream, info, err))
 				continue
 			}
+			if _, err := s.bindmount(); err != nil {
+				log.Warningf("Service %q, error setting up bind mounts for %q: %s", s.Service, s.Upstream, err)
+				s.SetState(StateBroken, fmt.Sprintf("error setting up bind mounts repo %q: %s", s.Upstream, err))
+				continue
+			}
 			if rerr := s.reload(); rerr != nil {
 				log.Warningf("Service %q, error running systemctl daemon-reload: %s", s.Service, rerr)
 				s.SetState(StateBroken, fmt.Sprintf("error running systemctl daemon-reload %q: %s", s.Upstream, rerr))
@@ -211,6 +216,11 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 		state, info = s.State()
 		s.SetState(state, info)
 
+		if _, err := s.bindmount(); err != nil {
+			log.Warningf("Service %q, error setting up bind mounts for %q: %s", s.Service, s.Upstream, err)
+			s.SetState(StateBroken, fmt.Sprintf("error setting up bind mounts repo %q: %s", s.Upstream, err))
+			continue
+		}
 		log.Infof("Service %q, diff in repo %q, pinging it", s.Service, s.Upstream)
 		if rerr := s.reload(); rerr != nil {
 			log.Warningf("Service %q, error running systemctl daemon-reload: %s", s.Service, rerr)
@@ -320,8 +330,24 @@ func (s *Service) bindmount() (int, error) {
 		}
 
 		if ok, err := mountinfo.Mounted(d.Local); err == nil && ok {
-			log.Infof("%s %q is already mounted", logtype, d.Local)
-			continue
+			if d.File == true {
+				log.Infof("%s %q is already mounted, unmounting", logtype, d.Local)
+				ctx := context.TODO()
+				cmd := exec.CommandContext(ctx, "umount", d.Local)
+				log.Infof("running %v", cmd.Args)
+				err := cmd.Run()
+				if err != nil {
+					if exitError, ok := err.(*exec.ExitError); ok {
+						if e := exitError.ExitCode(); e != 0 {
+							return 0, fmt.Errorf("failed to umount %q, exit code %d", d.Local, e)
+						}
+					}
+					return 0, fmt.Errorf("failed to umount %q: %s", d.Local, err)
+				}
+			} else {
+				log.Infof("%s %q is already mounted", logtype, d.Local)
+				continue
+			}
 		}
 
 		ctx := context.TODO()

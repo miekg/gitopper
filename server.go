@@ -330,7 +330,6 @@ func (s *Service) bindmount() (int, error) {
 		}
 
 		if ok, err := mountinfo.Mounted(d.Local); err == nil && ok {
-			log.Infof("%s %q is already mounted", logtype, d.Local)
 			if d.File == true {
 				log.Infof("%s %q is already mounted, unmounting", logtype, d.Local)
 				ctx := context.TODO()
@@ -346,6 +345,7 @@ func (s *Service) bindmount() (int, error) {
 					return 0, fmt.Errorf("failed to umount %q: %s", d.Local, err)
 				}
 			} else {
+				log.Infof("%s %q is already mounted", logtype, d.Local)
 				continue
 			}
 		}

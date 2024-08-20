@@ -3,11 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"strconv"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/miekg/gitopper/proto"
-	"github.com/rodaine/table"
 	"github.com/urfave/cli/v2"
 	"go.science.ru.nl/log"
 )
@@ -151,6 +153,10 @@ func cmdFreeze(ctx *cli.Context) error {
 	return err
 }
 
+func tblPrint(writer io.Writer, line []string) {
+	fmt.Fprintln(writer, strings.Join(line, "\t"))
+}
+
 func cmdService(ctx *cli.Context) error {
 	at, err := atMachine(ctx)
 	if err != nil {
@@ -174,11 +180,13 @@ func cmdService(ctx *cli.Context) error {
 		fmt.Print(string(body))
 		return nil
 	}
-	tbl := table.New("#", "SERVICE", "HASH", "STATE", "INFO", "SINCE")
+	tbl := new(tabwriter.Writer)
+	tbl.Init(os.Stdout, 0, 8, 1, ' ', 0)
+	tblPrint(tbl, []string{"#", "SERVICE", "HASH", "STATE", "INFO", "SINCE"})
 	for i, ls := range ls.ListServices {
-		tbl.AddRow(i, ls.Service, ls.Hash, ls.State, ls.StateInfo, ls.StateChange)
+		tblPrint(tbl, []string{strconv.FormatInt(int64(i), 10), ls.Service, ls.Hash, ls.State, ls.StateInfo, ls.StateChange})
 	}
-	tbl.Print()
+	_ = tbl.Flush()
 	return nil
 }
 
@@ -199,10 +207,12 @@ func cmdMachines(ctx *cli.Context) error {
 		fmt.Print(string(body))
 		return nil
 	}
-	tbl := table.New("#", "MACHINE", "ACTUAL")
+	tbl := new(tabwriter.Writer)
+	tbl.Init(os.Stdout, 0, 8, 1, ' ', 0)
+	tblPrint(tbl, []string{"#", "MACHINE", "ACTUAL"})
 	for i, m := range lm.ListMachines {
-		tbl.AddRow(i, m.Machine, m.Actual)
+		tblPrint(tbl, []string{strconv.FormatInt(int64(i), 10), m.Machine, m.Actual})
 	}
-	tbl.Print()
+	_ = tbl.Flush()
 	return nil
 }

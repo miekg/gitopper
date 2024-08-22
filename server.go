@@ -230,6 +230,8 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 			log.Warningf("Service %q, error running systemctl: %s", s.Service, err)
 			s.SetState(StateBroken, fmt.Sprintf("error running systemctl %q: %s", s.Upstream, err))
 			continue
+		} else {
+			s.SetState(StateOK, "")
 		}
 	}
 }

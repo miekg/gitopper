@@ -231,6 +231,7 @@ func (s *Service) trackUpstream(ctx context.Context, duration time.Duration) {
 			s.SetState(StateBroken, fmt.Sprintf("error running systemctl %q: %s", s.Upstream, err))
 			continue
 		}
+		s.SetState(StateOK, "")
 	}
 }
 

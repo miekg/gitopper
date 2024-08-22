@@ -294,7 +294,11 @@ func run(exec *ExecContext) error {
 				log.Warningf("Service %q, error running systemctl: %s", s.Service, err)
 				s.SetState(StateBroken, fmt.Sprintf("error running systemctl %q: %s", s.Upstream, err))
 				// no continue; maybe git pull will make this work later
+			} else {
+				s.SetState(StateOK, "")
 			}
+		} else {
+			s.SetState(StateOK, "")
 		}
 
 		workerWG.Add(1)

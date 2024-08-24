@@ -120,8 +120,14 @@ func (g *Git) Pull() (bool, error) {
 	g.cwd = g.mount
 	defer func() { g.cwd = "" }()
 
-	out, err := g.run("pull", "--stat", "origin", g.branch)
+	if _, err := g.run("fetch"); err != nil {
+		return false, err
+	}
+	out, err := g.run("diff", "--stat=4096", "--name-only", g.branch, fmt.Sprintf("origin/%s", g.branch))
 	if err != nil {
+		return false, err
+	}
+	if _, err := g.run("merge"); err != nil {
 		return false, err
 	}
 	return g.OfInterest(out), nil

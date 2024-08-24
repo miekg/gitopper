@@ -28,11 +28,9 @@ func (g *Git) OfInterest(data []byte) bool {
 	// bunch of lines usually < 1000. So it's not too bad.
 	for scanner.Scan() {
 		text := scanner.Text()
-		if strings.HasPrefix(text, " ") && strings.Contains(text, " | ") {
-			for _, d := range g.dirs {
-				if strings.Contains(text, d) {
-					return true
-				}
+		for _, d := range g.dirs {
+			if strings.Contains(text, d) {
+				return true
 			}
 		}
 	}

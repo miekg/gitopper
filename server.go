@@ -259,6 +259,13 @@ func (s *Service) enable() error {
 	return cmd.Run()
 }
 
+func (s *Service) start() error {
+	ctx := context.TODO()
+	cmd := exec.CommandContext(ctx, "systemctl", "start", s.Service)
+	log.Infof("running %v", cmd.Args)
+	return cmd.Run()
+}
+
 // Boot returns the start time of the service. If that isn't available because there isn't a Service in s, then we
 // return the kernel's boot time (i.e. when the system we started).
 func (s *Service) SetBoot() {

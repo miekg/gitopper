@@ -261,11 +261,6 @@ func run(exec *ExecContext) error {
 				log.Fatalf("Service %q, error installing package %q: %s", s.Service, s.Package, err)
 			}
 		}
-		if strings.Contains(s.Service, "@") {
-			if err := s.enable(); err != nil {
-				log.Fatalf("Service %q, error enabling instance template: %s", s.Service, err)
-			}
-		}
 
 		// Initial checkout - if needed.
 		err := gc.Checkout()
@@ -283,6 +278,11 @@ func run(exec *ExecContext) error {
 			log.Warningf("Service %q, error setting up bind mounts for %q: %s", s.Service, s.Upstream, err)
 			s.SetState(StateBroken, fmt.Sprintf("error setting up bind mounts repo %q: %s", s.Upstream, err))
 			continue
+		}
+		if strings.Contains(s.Service, "@") {
+			if err := s.enable(); err != nil {
+				log.Fatalf("Service %q, error enabling instance template: %s", s.Service, err)
+			}
 		}
 		// Restart any services as they see new files in their bindmounts. Do this here, because we can't be
 		// sure there is an update to a newer commit that would also kick off a restart.
